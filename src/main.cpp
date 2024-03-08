@@ -4,6 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <vector>
 #include <iostream>
 
 void process_input(GLFWwindow *window)
@@ -21,25 +22,41 @@ constexpr const unsigned int WIDTH = 800;
 constexpr const unsigned int HEIGHT = 600;
 
 const char *vertexShaderSource = "#version 460 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
+    "layout (location = 0) in vec3 position;\n"
+    "layout (location = 1) in vec3 normal;\n"
+    "layout (location = 2) in vec4 color;\n"
     "uniform mat4 projection;\n"
     "uniform mat4 camera;\n"
+    "out vec3 pass_position;\n"
+    "out vec3 pass_normal;\n"
+    "out vec4 pass_color;\n"
     "void main()\n"
     "{\n"
-    "   gl_Position = projection * camera * vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+    "   gl_Position = projection * camera * vec4(position.x, position.y, position.z, 1.0);\n"
+    "   pass_position = position;\n"
+    "   pass_normal = normal;\n"
+    "   pass_color = color;\n"
     "}\0";
-const char *fragmentShaderSource = "#version 330 core\n"
+const char *fragmentShaderSource = "#version 460 core\n"
+    "in vec3 pass_position;\n"
+    "in vec3 pass_normal;\n"
+    "in vec4 pass_color;\n"
     "out vec4 FragColor;\n"
+    "const vec3 light_position = vec3(1.0, 1.0, 0.0);\n"
     "void main()\n"
     "{\n"
-    "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-    "}\n\0";
+    "   vec3 p = pass_position;\n"
+    "   vec3 N = normalize(pass_normal.xyz);\n"
+    "   vec3 L = normalize(light_position - p);\n"
+    "   float lambert = max(0.0, dot(N, L));\n"
+    "   FragColor = pass_color * (lambert + 0.1);\n"
+    "}\0";
 
 struct vertex
 {
-    float position[3];
-    float normal[3];
-    float color[4];
+    glm::vec3 p;
+    glm::vec3 n;
+    glm::vec4 c;
 };
 
 struct drawcall_indirect
@@ -111,11 +128,19 @@ int main()
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    float vertices[] = {
-        0.0f, 0.0f, 0.0f,
-        0.5f, 0.0f, 0.0f,
-        0.5f, 0.0f, -0.5f 
-    }; 
+    std::vector<vertex> vertices = { { .p = { 0.0f, 0.0f, 0.0f }, 
+                                       .n = { 0.0f, 1.0f, 0.0f }, 
+                                       .c = { 1.0f, 0.0f, 0.0f, 1.0f },
+                                     },
+                                     { .p = { 5.0f, 0.0f, 0.0f }, 
+                                       .n = { 0.0f, 1.0f, 0.0f }, 
+                                       .c = { 1.0f, 0.0f, 0.0f, 1.0f },
+                                     },
+                                     { .p = { 5.0f, 0.0f, -5.0f }, 
+                                       .n = { 0.0f, 1.0f, 0.0f }, 
+                                       .c = { 1.0f, 0.0f, 0.0f, 1.0f },
+                                     },
+    };
 
     unsigned int vbo, vao;
     glGenVertexArrays(1, &vao);
@@ -123,10 +148,14 @@ int main()
     glBindVertexArray(vao);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertex), vertices.data(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)0);
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)sizeof(glm::vec3));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)(sizeof(glm::vec3) + sizeof(glm::vec3)));
+    glEnableVertexAttribArray(2);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0); 
 
