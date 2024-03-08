@@ -129,8 +129,7 @@ int main()
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    const auto vertices = create_chunk();
-    const auto indices = cube_indices();
+    const auto [vertices, indices] = cube();
 
     unsigned int vbo, vao, ebo;
     glGenVertexArrays(1, &vao);
@@ -142,7 +141,7 @@ int main()
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertex), vertices.data(), GL_STATIC_DRAW);
     
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * sizeof(indices), indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), indices.data(), GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)0);
     glEnableVertexAttribArray(0);
@@ -156,7 +155,7 @@ int main()
     glBindVertexArray(0); 
 
     const auto projection = glm::perspective(60.0f, (float)WIDTH / (float)HEIGHT, 1.0f, 100.0f);
-    const auto camera = glm::lookAt(glm::vec3(0.0f, 2.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)); 
+    const auto camera = glm::lookAt(glm::vec3(-2.0f, 2.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)); 
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     const auto projection_loc = glGetUniformLocation(shaderProgram, "projection");
@@ -171,7 +170,6 @@ int main()
         glUniformMatrix4fv(projection_loc, 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(camera_loc, 1, GL_FALSE, glm::value_ptr(camera));
         glBindVertexArray(vao);
-//        glDrawArrays(GL_TRIANGLES, 0, 3);
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 //        glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, length, sizeof_DAIC);
         glfwSwapBuffers(window);

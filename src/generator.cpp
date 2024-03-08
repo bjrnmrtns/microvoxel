@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 #include <vector>
+#include <tuple>
 
 static constexpr const glm::vec3 top(0.0f, 1.0f, 0.0f);
 static constexpr const glm::vec3 bottom(0.0f, -1.0f, 0.0f);
@@ -166,4 +167,31 @@ std::vector<vertex> cube_bottom()
                  .c = { 1.0f, 0.0f, 0.0f, 1.0f },
                },
            };
+}
+
+std::tuple<std::vector<vertex>, std::vector<unsigned int>> cube()
+{
+    std::vector<vertex> resultv;
+    std::vector<unsigned int>  resulti;
+    const auto cbottom = cube_bottom();
+    const auto ctop = cube_top();
+    const auto cleft = cube_left();
+    const auto cright = cube_right();
+    const auto cfront = cube_front();
+    const auto cback = cube_back();
+    const auto indices = cube_indices();
+    resultv.insert(resultv.end(), cbottom.begin(), cbottom.end());
+    resulti.insert(resulti.end(), indices.begin(), indices.end());
+    resultv.insert(resultv.end(), ctop.begin(), ctop.end());
+    resulti.insert(resulti.end(), indices.begin(), indices.end());
+    resultv.insert(resultv.end(), cleft.begin(), cleft.end());
+    resulti.insert(resulti.end(), indices.begin(), indices.end());
+    resultv.insert(resultv.end(), cright.begin(), cright.end());
+    resulti.insert(resulti.end(), indices.begin(), indices.end());
+    resultv.insert(resultv.end(), cfront.begin(), cfront.end());
+    resulti.insert(resulti.end(), indices.begin(), indices.end());
+    resultv.insert(resultv.end(), cback.begin(), cback.end());
+    resulti.insert(resulti.end(), indices.begin(), indices.end());
+
+    return { resultv, resulti };
 }

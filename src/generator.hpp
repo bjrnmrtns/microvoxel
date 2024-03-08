@@ -10,3 +10,4 @@ std::vector<vertex> cube_left();
 std::vector<vertex> cube_right();
 std::vector<vertex> cube_top();
 std::vector<vertex> cube_bottom();
+std::tuple<std::vector<vertex>, std::vector<unsigned int>> cube();
