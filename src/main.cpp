@@ -129,15 +129,20 @@ int main()
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    std::vector<vertex> vertices = create_chunk();
+    const auto vertices = create_chunk();
+    const auto indices = cube_indices();
 
-    unsigned int vbo, vao;
+    unsigned int vbo, vao, ebo;
     glGenVertexArrays(1, &vao);
     glGenBuffers(1, &vbo);
+    glGenBuffers(1, &ebo);
     glBindVertexArray(vao);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertex), vertices.data(), GL_STATIC_DRAW);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * sizeof(indices), indices.data(), GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)0);
     glEnableVertexAttribArray(0);
@@ -166,7 +171,8 @@ int main()
         glUniformMatrix4fv(projection_loc, 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(camera_loc, 1, GL_FALSE, glm::value_ptr(camera));
         glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+//        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 //        glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, length, sizeof_DAIC);
         glfwSwapBuffers(window);
         glfwPollEvents();
