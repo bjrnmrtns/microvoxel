@@ -10,6 +10,8 @@ find_package(glm REQUIRED)
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
+    src/generator.cpp
+    src/vertex.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}

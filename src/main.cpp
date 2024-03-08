@@ -1,3 +1,6 @@
+#include "generator.hpp"
+#include "vertex.hpp"
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -52,13 +55,6 @@ const char *fragmentShaderSource = "#version 460 core\n"
     "   FragColor = pass_color * (lambert + 0.1);\n"
     "}\0";
 
-struct vertex
-{
-    glm::vec3 p;
-    glm::vec3 n;
-    glm::vec4 c;
-};
-
 struct drawcall_indirect
 {
     unsigned int count_indices;
@@ -68,6 +64,24 @@ struct drawcall_indirect
     unsigned int base_instance;
     unsigned int* index;
 };
+
+std::vector<vertex> create_chunk()
+{
+    std::vector<vertex> vertices = { { .p = { 0.0f, 0.0f, 0.0f }, 
+                                       .n = { 0.0f, 1.0f, 0.0f }, 
+                                       .c = { 1.0f, 0.0f, 0.0f, 1.0f },
+                                     },
+                                     { .p = { 5.0f, 0.0f, 0.0f }, 
+                                       .n = { 0.0f, 1.0f, 0.0f }, 
+                                       .c = { 1.0f, 0.0f, 0.0f, 1.0f },
+                                     },
+                                     { .p = { 5.0f, 0.0f, -5.0f }, 
+                                       .n = { 0.0f, 1.0f, 0.0f }, 
+                                       .c = { 1.0f, 0.0f, 0.0f, 1.0f },
+                                     },
+    };
+    return vertices;
+}
 
 int main()
 {
