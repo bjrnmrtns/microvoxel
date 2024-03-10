@@ -46,19 +46,19 @@ std::vector<vertex> cube_front(const glm::ivec3 location, const glm::vec4 color)
     return { 
                { .p = cbv[0] + location, 
                  .n = normal, 
-                 .c = { 1.0f, 0.0f, 0.0f, 1.0f },
+                 .c = color,
                },
                { .p = cbv[1] + location, 
                  .n = normal, 
-                 .c = { 1.0f, 0.0f, 0.0f, 1.0f },
+                 .c = color,
                },
                { .p = cbv[2] + location, 
                  .n = normal, 
-                 .c = { 1.0f, 0.0f, 0.0f, 1.0f },
+                 .c = color,
                },
                { .p = cbv[3] + location, 
                  .n = normal, 
-                 .c = { 1.0f, 0.0f, 0.0f, 1.0f },
+                 .c = color,
                },
            };
 }
@@ -204,8 +204,8 @@ std::vector<unsigned int> build_chunk_indices()
     for(size_t x = 0; x < CHUNK_SIZE; x++) {
         for(size_t y = 0; y < CHUNK_SIZE; y++) {
            for(size_t z = 0; z < CHUNK_SIZE; z++) {
-               indices.insert(indices.end(), current.begin(), current.end());
                for(size_t i = 0; i < 6; i++) { // six sides of the cube
+                   indices.insert(indices.end(), current.begin(), current.end());
                    for(auto& index: current) {
                        index += 4;
                    }
