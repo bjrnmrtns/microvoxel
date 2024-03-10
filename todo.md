@@ -2,9 +2,12 @@
 - expirement with glMultiDrawElementsIndexed -> https://nickmcd.me/2021/04/04/high-performance-voxel-engine/
 
 2024-02-10
-? generate a chunk of 16 by 16 transparent cubes using normal rendering
++ generate a chunk of 16 by 16 transparent cubes using normal rendering
   + fix render with indices this needs to be added still
   + generate cube
   + generate 16x16 chunk
-  - generate chunk correctly
-  - generate transparent cubes
+  + generate chunk correctly
+  + generate transparent cubes
+  + fix winding because some sides not shown
+- create a freelook camera
+  - create transform class

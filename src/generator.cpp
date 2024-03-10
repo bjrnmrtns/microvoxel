@@ -9,19 +9,20 @@
 
 namespace {
 
+constexpr const float alpha = 0.5f;
 constexpr std::array<glm::vec4, 8> color_palette{
-    glm::vec4(0.0, 0.0, 0.0, 1.0), glm::vec4(0.0, 0.0, 1.0, 1.0),
-    glm::vec4(0.0, 1.0, 0.0, 1.0), glm::vec4(0.0, 1.0, 1.0, 1.0),
-    glm::vec4(1.0, 0.0, 0.0, 1.0), glm::vec4(1.0, 0.0, 1.0, 1.0),
-    glm::vec4(1.0, 1.0, 0.0, 1.0), glm::vec4(1.0, 1.0, 1.0, 1.0),
+    glm::vec4(0.0, 0.0, 0.0, alpha), glm::vec4(0.0, 0.0, 1.0, alpha),
+    glm::vec4(0.0, 1.0, 0.0, alpha), glm::vec4(0.0, 1.0, 1.0, alpha),
+    glm::vec4(1.0, 0.0, 0.0, alpha), glm::vec4(1.0, 0.0, 1.0, alpha),
+    glm::vec4(1.0, 1.0, 0.0, alpha), glm::vec4(1.0, 1.0, 1.0, alpha),
 };
 
 constexpr const glm::vec3 top(0.0f, 1.0f, 0.0f);
 constexpr const glm::vec3 bottom(0.0f, -1.0f, 0.0f);
 constexpr const glm::vec3 left(-1.0f, 0.0f, 0.0f);
 constexpr const glm::vec3 right(1.0f, 0.0f, 0.0f);
-constexpr const glm::vec3 back(0.0f, 0.0f, -1.0f);
-constexpr const glm::vec3 front(0.0f, 0.0f, 1.0f);
+constexpr const glm::vec3 back(0.0f, 0.0f, 1.0f);
+constexpr const glm::vec3 front(0.0f, 0.0f, -1.0f);
 
 constexpr const glm::vec3 cbv[8] = {
     {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0},
@@ -192,8 +193,6 @@ std::vector<vertex> cube_bottom(const glm::vec3 location,
 }
 
 std::vector<vertex> cube(glm::vec3 location, const glm::vec4 color) {
-  location = glm::vec3(0.0f, 0.0f, 0.0f);
- 
   std::vector<vertex> result;
   const auto cfront = cube_front(location, color);
   const auto cback = cube_back(location, color);
