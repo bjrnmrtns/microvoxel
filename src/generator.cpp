@@ -169,6 +169,15 @@ std::vector<vertex> cube_bottom()
            };
 }
 
+static std::vector<unsigned int> offset_indices(const std::vector<unsigned int>& indices, unsigned int offset) 
+{
+    std::vector<unsigned int> result = indices;
+    for(auto& i: result) {
+        i += offset;
+    }
+    return result;
+}
+
 std::tuple<std::vector<vertex>, std::vector<unsigned int>> cube()
 {
     std::vector<vertex> resultv;
@@ -179,18 +188,23 @@ std::tuple<std::vector<vertex>, std::vector<unsigned int>> cube()
     const auto cright = cube_right();
     const auto cfront = cube_front();
     const auto cback = cube_back();
-    const auto indices = cube_indices();
+    auto indices = cube_indices();
     resultv.insert(resultv.end(), cbottom.begin(), cbottom.end());
     resulti.insert(resulti.end(), indices.begin(), indices.end());
     resultv.insert(resultv.end(), ctop.begin(), ctop.end());
+    indices = offset_indices(indices, 4);
     resulti.insert(resulti.end(), indices.begin(), indices.end());
     resultv.insert(resultv.end(), cleft.begin(), cleft.end());
+    indices = offset_indices(indices, 4);
     resulti.insert(resulti.end(), indices.begin(), indices.end());
     resultv.insert(resultv.end(), cright.begin(), cright.end());
+    indices = offset_indices(indices, 4);
     resulti.insert(resulti.end(), indices.begin(), indices.end());
     resultv.insert(resultv.end(), cfront.begin(), cfront.end());
+    indices = offset_indices(indices, 4);
     resulti.insert(resulti.end(), indices.begin(), indices.end());
     resultv.insert(resultv.end(), cback.begin(), cback.end());
+    indices = offset_indices(indices, 4);
     resulti.insert(resulti.end(), indices.begin(), indices.end());
 
     return { resultv, resulti };
