@@ -7,7 +7,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <vector>
 #include <iostream>
 
 void process_input(GLFWwindow *window)
@@ -64,11 +63,6 @@ struct drawcall_indirect
     unsigned int base_instance;
     unsigned int* index;
 };
-
-std::vector<vertex> create_chunk()
-{
-    return cube_top();
-}
 
 int main()
 {
@@ -129,7 +123,7 @@ int main()
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    const auto [vertices, indices] = cube();
+    const auto [vertices, indices] = build_chunk({0, 0, 0});
     std::cout << vertices.size() << " " << indices.size() << std::endl;
 
     unsigned int vbo, vao, ebo;
@@ -155,7 +149,7 @@ int main()
 
     const auto projection = glm::perspective(60.0f, (float)WIDTH / (float)HEIGHT, 1.0f, 100.0f);
     const auto camera = glm::lookAt(glm::vec3(-2.0f, 2.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)); 
-//    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     const auto projection_loc = glGetUniformLocation(shaderProgram, "projection");
     const auto camera_loc = glGetUniformLocation(shaderProgram, "camera");
