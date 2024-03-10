@@ -52,6 +52,7 @@ const char *fragmentShaderSource = "#version 460 core\n"
     "   vec3 L = normalize(light_position - p);\n"
     "   float lambert = max(0.0, dot(N, L));\n"
     "   FragColor = pass_color * (lambert + 0.1);\n"
+    "   FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
     "}\0";
 
 struct drawcall_indirect
@@ -124,7 +125,21 @@ int main()
     glDeleteShader(fragmentShader);
 
     const auto [vertices, indices] = build_chunk({0, 0, 0});
-    std::cout << vertices.size() << " " << indices.size() << std::endl;
+    std::cout << "v.size(): " << vertices.size() << " i.size(): " << indices.size() << std::endl;
+    for(size_t i = 0; i < indices.size(); i+=3) {
+        const auto v0 = vertices[indices[i]];
+        const auto v1 = vertices[indices[i + 1]];
+        const auto v2 = vertices[indices[i + 2]];
+        std::cout << "1: " << v0.p.x << " " 
+                           << v0.p.y << " " 
+                           << v0.p.z << " " 
+                  << "2: " << v1.p.x << " "
+                           << v1.p.y << " "
+                           << v1.p.z << " "
+                  << "3: " << v2.p.x << " "
+                           << v2.p.y << " "
+                           << v2.p.z << "\n";
+    }
 
     unsigned int vbo, vao, ebo;
     glGenVertexArrays(1, &vao);
@@ -148,7 +163,7 @@ int main()
     glBindVertexArray(0); 
 
     const auto projection = glm::perspective(60.0f, (float)WIDTH / (float)HEIGHT, 1.0f, 100.0f);
-    const auto camera = glm::lookAt(glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)); 
+    const auto camera = glm::lookAt(glm::vec3(0.0f, 2.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)); 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     const auto projection_loc = glGetUniformLocation(shaderProgram, "projection");
@@ -164,6 +179,7 @@ int main()
         glUniformMatrix4fv(camera_loc, 1, GL_FALSE, glm::value_ptr(camera));
         glBindVertexArray(vao);
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
 //        glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, length, sizeof_DAIC);
         glfwSwapBuffers(window);
         glfwPollEvents();
