@@ -88,6 +88,10 @@ int main()
         fprintf(stderr, "GLEW initialization error: %s\n", glewGetErrorString(err));
         return -1;
     }
+    // enable back face culling
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
 
     // enable the z-buffer so order of pixels is correctly drawn
     glEnable(GL_DEPTH_TEST);
@@ -155,8 +159,8 @@ int main()
 
     glBindVertexArray(0); 
 
-    const auto projection = glm::perspective(60.0f, (float)WIDTH / (float)HEIGHT, 1.0f, 100.0f);
-    const auto camera = glm::lookAt(glm::vec3(8.0f, 16.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)); 
+    const auto projection = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 1.0f, 100.0f);
+    const auto camera = glm::lookAt(glm::vec3(8.0f, 30.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)); 
 //    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     const auto projection_loc = glGetUniformLocation(shaderProgram, "projection");
@@ -167,7 +171,7 @@ int main()
     while (!glfwWindowShouldClose(window))
     { 
         const auto world = glm::rotate(glm::mat4(1.0f), rotation, glm::vec3(1.0f, 0.0f, 1.0f));
-//        rotation += 0.01f;
+        rotation += 0.01f;
         process_input(window);
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

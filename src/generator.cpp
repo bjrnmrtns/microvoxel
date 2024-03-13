@@ -25,8 +25,8 @@ constexpr const glm::vec3 back(0.0f, 0.0f, 1.0f);
 constexpr const glm::vec3 front(0.0f, 0.0f, -1.0f);
 
 constexpr const glm::vec3 cbv[8] = {
-    {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0},
-    {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0},
+    {-0.5, -0.5, -0.5}, { 0.5, -0.5, -0.5}, {-0.5,  0.5, -0.5}, { 0.5,  0.5, -0.5},
+    {-0.5, -0.5,  0.5}, { 0.5, -0.5,  0.5}, {-0.5,  0.5,  0.5}, { 0.5,  0.5,  0.5},
 };
 
 constexpr const std::array<unsigned int, 6> cube_indices{0, 1, 2, 1, 3, 2};
@@ -237,9 +237,9 @@ build_chunk(glm::vec3 chunk_location) {
   std::uniform_int_distribution<unsigned int> uint_distribution(0, 7);
   std::vector<vertex> resultv;
   std::vector<unsigned int> resulti = build_chunk_indices();
-  for (size_t x = 0; x < CHUNK_SIZE; x++) {
-    for (size_t y = 0; y < CHUNK_SIZE; y++) {
-      for (size_t z = 0; z < CHUNK_SIZE; z++) {
+  for (int x = CHUNK_MIN; x < CHUNK_MAX; x++) {
+    for (int y = CHUNK_MIN; y < CHUNK_MAX; y++) {
+      for (int z = CHUNK_MIN; z < CHUNK_MAX; z++) {
         const auto color_index = uint_distribution(gen);
         const auto cube_location =
             chunk_location * (float)CHUNK_SIZE + glm::vec3(x, y, z);

@@ -9,5 +9,8 @@
   + generate chunk correctly
   + generate transparent cubes
   + fix winding because some sides not shown
+
+2024-02-13
 - create a freelook camera
-  - create transform class
+  + create transform class
++ center origin of generated chunk so rotation works on own axis
