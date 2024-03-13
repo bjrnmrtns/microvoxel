@@ -1,4 +1,5 @@
 #include "generator.hpp"
+#include "transform.hpp"
 #include "vertex.hpp"
 
 #include <GL/glew.h>
