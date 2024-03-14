@@ -10,6 +10,7 @@ find_package(glm REQUIRED)
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
+    src/fps.cpp
     src/generator.cpp
     src/vertex.cpp
 )

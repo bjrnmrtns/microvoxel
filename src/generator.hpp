@@ -3,7 +3,7 @@
 #include <vector>
 #include "vertex.hpp"
 
-constexpr int CHUNK_SIZE = 16;
+constexpr int CHUNK_SIZE = 128;
 static_assert(CHUNK_SIZE % 2 == 0);
 static_assert(CHUNK_SIZE > 0);
 constexpr int CHUNK_MIN = -(CHUNK_SIZE / 2);

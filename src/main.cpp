@@ -1,3 +1,4 @@
+#include "fps.hpp"
 #include "generator.hpp"
 #include "transform.hpp"
 #include "vertex.hpp"
@@ -8,6 +9,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <array>
 #include <iostream>
 
 void process_input(GLFWwindow *window)
@@ -160,7 +162,7 @@ int main()
     glBindVertexArray(0); 
 
     const auto projection = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 1.0f, 100.0f);
-    const auto camera = glm::lookAt(glm::vec3(8.0f, 30.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)); 
+    const auto camera = glm::lookAt(glm::vec3(8.0f, 160.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)); 
 //    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     const auto projection_loc = glGetUniformLocation(shaderProgram, "projection");
@@ -168,8 +170,11 @@ int main()
     const auto world_loc = glGetUniformLocation(shaderProgram, "world");
 
     float rotation = 0.0f;
+    fps fps;
     while (!glfwWindowShouldClose(window))
     { 
+        fps.add_timepoint();
+        std::cout << "fps: " << fps.value() << "\n";
         const auto world = glm::rotate(glm::mat4(1.0f), rotation, glm::vec3(1.0f, 0.0f, 1.0f));
         rotation += 0.01f;
         process_input(window);

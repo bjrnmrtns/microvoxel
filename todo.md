@@ -11,6 +11,17 @@
   + fix winding because some sides not shown
 
 2024-02-13
++ center origin of generated chunk so rotation works on own axis
+x implement greedy mesh
+
+2024-02-14
+- add fps counter
+- add 10x10x2 chunks
 - create a freelook camera
   + create transform class
-+ center origin of generated chunk so rotation works on own axis
+- create technique where we do not mesh anymore but use big faces to index in big 3d textures, where a 8192x8192x255 voxel world only contains 8192x2 + 8192 * 2 + 255 * 2 + 255 * 2 number of faces
+  - create to 6 faces
+  - generate all faces and do a binary color 3d rendering
+  - create a global 3d texture of 1 byte per voxel and index into it and sample from a color palette (256 colors)
+  - implement randomizer of mesh so we can see how fast we can update the global lookup table
+- investigate a sparse 3d texture (maybe octree like)
