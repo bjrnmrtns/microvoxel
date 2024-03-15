@@ -1,4 +1,5 @@
 #include "transform.hpp"
+
 transform::transform(const glm::vec3 &translation, const glm::quat &rotation,
                      const glm::vec3 &scale)
     : translation(translation), rotation(rotation), scale(scale) {}

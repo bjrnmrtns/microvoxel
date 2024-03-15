@@ -21,12 +21,12 @@ constexpr const glm::vec3 top(0.0f, 1.0f, 0.0f);
 constexpr const glm::vec3 bottom(0.0f, -1.0f, 0.0f);
 constexpr const glm::vec3 left(-1.0f, 0.0f, 0.0f);
 constexpr const glm::vec3 right(1.0f, 0.0f, 0.0f);
-constexpr const glm::vec3 back(0.0f, 0.0f, 1.0f);
-constexpr const glm::vec3 front(0.0f, 0.0f, -1.0f);
+constexpr const glm::vec3 back(0.0f, 0.0f, -1.0f);
+constexpr const glm::vec3 front(0.0f, 0.0f, 1.0f);
 
 constexpr const glm::vec3 cbv[8] = {
-    {-0.5, -0.5, -0.5}, { 0.5, -0.5, -0.5}, {-0.5,  0.5, -0.5}, { 0.5,  0.5, -0.5},
-    {-0.5, -0.5,  0.5}, { 0.5, -0.5,  0.5}, {-0.5,  0.5,  0.5}, { 0.5,  0.5,  0.5},
+    {-0.5, -0.5, 0.5}, {0.5, -0.5, 0.5}, {-0.5, 0.5, 0.5}, {0.5, 0.5, 0.5},
+    {-0.5, -0.5, -0.5}, {0.5, -0.5, -0.5}, {-0.5, 0.5, -0.5}, {0.5, 0.5, -0.5},
 };
 
 constexpr const std::array<unsigned int, 6> cube_indices{0, 1, 2, 1, 3, 2};
@@ -58,8 +58,7 @@ std::vector<vertex> cube_front(const glm::vec3 location,
   };
 }
 
-std::vector<vertex> cube_back(const glm::vec3 location,
-                              const glm::vec4 color) {
+std::vector<vertex> cube_back(const glm::vec3 location, const glm::vec4 color) {
   auto normal = back;
   return {
       {
@@ -85,8 +84,7 @@ std::vector<vertex> cube_back(const glm::vec3 location,
   };
 }
 
-std::vector<vertex> cube_left(const glm::vec3 location,
-                              const glm::vec4 color) {
+std::vector<vertex> cube_left(const glm::vec3 location, const glm::vec4 color) {
   auto normal = left;
   return {
       {
@@ -192,6 +190,13 @@ std::vector<vertex> cube_bottom(const glm::vec3 location,
   };
 }
 
+void scale(std::vector<vertex>& vertices, const glm::vec3& scale)
+{
+    for(auto& v: vertices) {
+        v.p = v.p * scale;
+    }
+}
+
 std::vector<vertex> cube(glm::vec3 location, const glm::vec4 color) {
   std::vector<vertex> result;
   const auto cfront = cube_front(location, color);
@@ -249,4 +254,66 @@ build_chunk(glm::vec3 chunk_location) {
     }
   }
   return {resultv, resulti};
+}
+
+std::array<unsigned int, 6> offset_indices(const std::array<unsigned int, 6>& indices, unsigned int offset)
+{
+    std::array<unsigned int, 6> result;
+    for(size_t i = 0; i < indices.size(); i++) {
+        result[i] = indices[i] + offset;
+    }
+    return result;
+}
+
+std::tuple<std::vector<vertex>, std::vector<unsigned int>>
+build_lattice() {
+  std::vector<vertex> vertices;
+  std::vector<unsigned int> indices;
+  const float alpha = 1.0f;
+  constexpr int size_x = 1000;
+  constexpr int size_y = 100;
+  constexpr int size_z = 1000;
+  for (int x = -size_x / 2; x < size_x / 2; x++) {
+    auto s = cube_left(glm::vec3(x + 0.5, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, alpha)); 
+    scale(s, glm::vec3(1.0f, size_y, size_z));
+    const auto o_indices = offset_indices(cube_indices, vertices.size());
+    vertices.insert(vertices.end(), s.begin(), s.end());
+    indices.insert(indices.end(), o_indices.cbegin(), o_indices.cend());
+  }
+  for (int y = -size_y / 2; y < size_y / 2; y++) {
+    auto s = cube_top(glm::vec3(0.0f, y + 0.5, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, alpha)); 
+    scale(s, glm::vec3(size_x, 1.0f, size_z));
+    const auto o_indices = offset_indices(cube_indices, vertices.size());
+    vertices.insert(vertices.end(), s.begin(), s.end());
+    indices.insert(indices.end(), o_indices.cbegin(), o_indices.cend());
+  }
+  for (int z = -size_z / 2; z < size_z / 2; z++) {
+    auto s = cube_front(glm::vec3(0.0f, 0.0f, z + 0.5), glm::vec4(1.0f, 0.0f, 0.0f, alpha)); 
+    scale(s, glm::vec3(size_x, size_y, 1.0f));
+    const auto o_indices = offset_indices(cube_indices, vertices.size());
+    vertices.insert(vertices.end(), s.begin(), s.end());
+    indices.insert(indices.end(), o_indices.cbegin(), o_indices.cend());
+  }
+  for (int x = -size_x / 2; x < size_x / 2; x++) {
+    auto s = cube_right(glm::vec3(x + 0.5, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, alpha)); 
+    scale(s, glm::vec3(1.0f, size_y, size_z));
+    const auto o_indices = offset_indices(cube_indices, vertices.size());
+    vertices.insert(vertices.end(), s.begin(), s.end());
+    indices.insert(indices.end(), o_indices.cbegin(), o_indices.cend());
+  }
+  for (int y = -size_y / 2; y < size_y / 2; y++) {
+    auto s = cube_bottom(glm::vec3(0.0f, y + 0.5, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, alpha)); 
+    scale(s, glm::vec3(size_y, 1.0f, size_z));
+    const auto o_indices = offset_indices(cube_indices, vertices.size());
+    vertices.insert(vertices.end(), s.begin(), s.end());
+    indices.insert(indices.end(), o_indices.cbegin(), o_indices.cend());
+  }
+  for (int z = -size_z / 2; z < size_z / 2; z++) {
+    auto s = cube_back(glm::vec3(0.0f, 0.0f, z + 0.5), glm::vec4(1.0f, 0.0f, 0.0f, alpha)); 
+    scale(s, glm::vec3(size_x, size_y, 1.0f));
+    const auto o_indices = offset_indices(cube_indices, vertices.size());
+    vertices.insert(vertices.end(), s.begin(), s.end());
+    indices.insert(indices.end(), o_indices.cbegin(), o_indices.cend());
+  }
+  return {vertices, indices};
 }

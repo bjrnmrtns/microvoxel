@@ -6,13 +6,13 @@ void fps::add_timepoint() {
 }
 
 unsigned int fps::value() {
-  unsigned int milliseconds = 0;
+  unsigned int microseconds = 0;
   for (size_t i = 0; i < size - 1; i++) { // nine steps
     const auto first = (current  + i) % size;
     const auto second = (current + i + 1) % size;
-    const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+    const auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
         time_points[second] - time_points[first]);
-    milliseconds += duration.count();
+    microseconds += duration.count();
   }
-  return 1000.0f / (milliseconds / 9.0f /* nine steps */);
+  return 1000000.0f / (microseconds / 9.0f /* nine steps */);
 }
