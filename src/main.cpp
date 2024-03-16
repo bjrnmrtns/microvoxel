@@ -63,7 +63,7 @@ const char *fragmentShaderSource =
     "in vec3 pass_normal;\n"
     "in vec4 pass_color;\n"
     "out vec4 FragColor;\n"
-    "const vec3 light_position = vec3(1.0, 1.0, 0.0);\n"
+    "const vec3 light_position = vec3(0.0, 100.0, 0.0);\n"
     "vec3 palette[8] = {\n"
     "    vec3(0.0, 0.0, 0.0),\n"
     "    vec3(0.0, 0.0, 1.0),\n"
@@ -79,19 +79,14 @@ const char *fragmentShaderSource =
     "   int x = int(round(pass_position.x + 0.5 + 250));\n"
     "   int y = int(round(pass_position.y + 0.5 + 50));\n"
     "   int z = int(round(pass_position.z + 0.5 + 125));\n"
-//    "   vec4 color = vec4(float(x  / 500.0), float(y / 100.0), float(z / 250.0), 1.0f);\n"
-//    "   vec4 color = vec4(float(x % 10) * 0.1, float(y % 10) * 0.1, float(z % 10) * 0.1, 1.0f);\n"
-//    "   float index = texture(type_buffer, ivec3(x, y, z)).r;\n"
     "   int xyz = x + 500 * (y + 100 * z);\n"
     "   uint index = texelFetch(type_buffer, xyz).r;\n"
-//    "   float index = texture(type_buffer, vec3(x / 500, y / 100, z / 250)).r;\n"
-//    "   float index = texture(type_buffer, vec3(x / 500, y / 100, z / 250)).r;\n"
     "   vec4 color = vec4(palette[index], 1.0f);\n"
     "   vec3 p = pass_position;\n"
     "   vec3 N = normalize(pass_normal.xyz);\n"
     "   vec3 L = normalize(light_position - p);\n"
     "   float lambert = max(0.0, dot(N, L));\n"
-    "   FragColor = color;//pass_color;// * (lambert + 0.1);\n"
+    "   FragColor = color;// * (lambert + 0.1);\n"
     "}\0";
 
 struct drawcall_indirect {
@@ -238,7 +233,7 @@ int main() {
   float zoom = 0.0f;
   while (!glfwWindowShouldClose(window)) {
   const auto camera =
-      glm::lookAt(glm::vec3(0.0f, 6.0f + zoom, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+      glm::lookAt(glm::vec3(0.0f, 200.0f + zoom, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f),
                   glm::vec3(0.0f, 0.0f, 1.0f));
     const auto q_x_rot = glm::rotate(glm::mat4(1.0f), rotate_x, glm::vec3(1.0f, 0.0f, 0.0f));
     const auto q_z_rot = glm::rotate(glm::mat4(1.0f), rotate_z, glm::vec3(0.0f, 0.0f, 1.0f));
