@@ -269,10 +269,10 @@ std::tuple<std::vector<vertex>, std::vector<unsigned int>>
 build_lattice() {
   std::vector<vertex> vertices;
   std::vector<unsigned int> indices;
-  const float alpha = 1.0f;
-  constexpr int size_x = 1000;
+  const float alpha = 0.5f;
+  constexpr int size_x = 500;
   constexpr int size_y = 100;
-  constexpr int size_z = 1000;
+  constexpr int size_z = 250;
   for (int x = -size_x / 2; x < size_x / 2; x++) {
     auto s = cube_left(glm::vec3(x + 0.5, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, alpha)); 
     scale(s, glm::vec3(1.0f, size_y, size_z));
@@ -280,7 +280,7 @@ build_lattice() {
     vertices.insert(vertices.end(), s.begin(), s.end());
     indices.insert(indices.end(), o_indices.cbegin(), o_indices.cend());
   }
-  for (int y = -size_y / 2; y < size_y / 2; y++) {
+  for (int y = size_y - 1; y  >= -size_y / 2; y--) {
     auto s = cube_top(glm::vec3(0.0f, y + 0.5, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, alpha)); 
     scale(s, glm::vec3(size_x, 1.0f, size_z));
     const auto o_indices = offset_indices(cube_indices, vertices.size());
@@ -301,13 +301,14 @@ build_lattice() {
     vertices.insert(vertices.end(), s.begin(), s.end());
     indices.insert(indices.end(), o_indices.cbegin(), o_indices.cend());
   }
+  /*
   for (int y = -size_y / 2; y < size_y / 2; y++) {
     auto s = cube_bottom(glm::vec3(0.0f, y + 0.5, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, alpha)); 
     scale(s, glm::vec3(size_y, 1.0f, size_z));
     const auto o_indices = offset_indices(cube_indices, vertices.size());
     vertices.insert(vertices.end(), s.begin(), s.end());
     indices.insert(indices.end(), o_indices.cbegin(), o_indices.cend());
-  }
+  }*/
   for (int z = -size_z / 2; z < size_z / 2; z++) {
     auto s = cube_back(glm::vec3(0.0f, 0.0f, z + 0.5), glm::vec4(1.0f, 0.0f, 0.0f, alpha)); 
     scale(s, glm::vec3(size_x, size_y, 1.0f));
