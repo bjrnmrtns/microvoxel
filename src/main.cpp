@@ -58,7 +58,7 @@ const char *vertexShaderSource =
     "}\0";
 const char *fragmentShaderSource =
     "#version 460 core\n"
-    "uniform sampler3D type_buffer;\n"
+    "uniform usamplerBuffer type_buffer;\n"
     "in vec3 pass_position;\n"
     "in vec3 pass_normal;\n"
     "in vec4 pass_color;\n"
@@ -76,12 +76,17 @@ const char *fragmentShaderSource =
     "};\n"
     "void main()\n"
     "{\n"
-    "   uint x = uint(round(pass_position.x + 0.5 + 250));\n"
-    "   uint y = uint(round(pass_position.y + 0.5 + 50));\n"
-    "   uint z = uint(round(pass_position.z + 0.5 + 125));\n"
+    "   int x = int(round(pass_position.x + 0.5 + 250));\n"
+    "   int y = int(round(pass_position.y + 0.5 + 50));\n"
+    "   int z = int(round(pass_position.z + 0.5 + 125));\n"
+//    "   vec4 color = vec4(float(x  / 500.0), float(y / 100.0), float(z / 250.0), 1.0f);\n"
 //    "   vec4 color = vec4(float(x % 10) * 0.1, float(y % 10) * 0.1, float(z % 10) * 0.1, 1.0f);\n"
-    "   float index = texture(type_buffer, vec3(ivec3(x, y, z))).r;\n"
-    "   vec4 color = vec4(palette[uint(index * 255.0)], 1.0f);\n"
+//    "   float index = texture(type_buffer, ivec3(x, y, z)).r;\n"
+    "   int xyz = x + 500 * (y + 100 * z);\n"
+    "   uint index = texelFetch(type_buffer, xyz).r;\n"
+//    "   float index = texture(type_buffer, vec3(x / 500, y / 100, z / 250)).r;\n"
+//    "   float index = texture(type_buffer, vec3(x / 500, y / 100, z / 250)).r;\n"
+    "   vec4 color = vec4(palette[index], 1.0f);\n"
     "   vec3 p = pass_position;\n"
     "   vec3 N = normalize(pass_normal.xyz);\n"
     "   vec3 L = normalize(light_position - p);\n"
@@ -202,26 +207,25 @@ int main() {
 
 //  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-  GLuint type_buffer_id;
-  std::vector<std::byte> type_buffer(500 * 100 * 250);
+  std::vector<uint8_t> type_buffer(500 * 100 * 250);
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_int_distribution<unsigned int> uint_distribution(0, 7);
   for(auto& type_id: type_buffer) {
-      type_id = (std::byte)uint_distribution(gen);
+      type_id = uint_distribution(gen);
   }
+  type_buffer[0] = 4; // red
+  type_buffer[1] = 2; // green
 
-  glGenTextures(1, &type_buffer_id);
-  glBindTexture(GL_TEXTURE_3D, type_buffer_id);
+  GLuint type_buffer_id;
+  glGenBuffers(1, &type_buffer_id);
+  glBindBuffer(GL_TEXTURE_BUFFER, type_buffer_id);
+  glBufferData(GL_TEXTURE_BUFFER, type_buffer.size() * sizeof(uint8_t), type_buffer.data(), GL_STATIC_DRAW);
 
-  glTexStorage3D(GL_TEXTURE_3D, 1, GL_R8, 500, 100, 250);
-  glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, 500, 100, 250, GL_RED, GL_UNSIGNED_BYTE, type_buffer.data());
-
-  glBindTexture(GL_TEXTURE_3D, 0);
-
-  glActiveTexture(GL_TEXTURE0);
-  GLuint sampler_location = glGetUniformLocation(shaderProgram, "type_buffer");
-  glUniform1i(sampler_location, 0);
+  GLuint type_buffer_tex_handle;
+  glGenTextures(1, &type_buffer_tex_handle);
+  glBindTexture(GL_TEXTURE_BUFFER, type_buffer_tex_handle);
+  glTexBuffer(GL_TEXTURE_BUFFER, GL_R8UI, type_buffer_id);
 
   const auto projection_loc = glGetUniformLocation(shaderProgram, "projection");
   const auto camera_loc = glGetUniformLocation(shaderProgram, "camera");
@@ -252,8 +256,8 @@ int main() {
     glUniformMatrix4fv(world_loc, 1, GL_FALSE,
                        glm::value_ptr(world_transform.to_matrix()));
     glBindVertexArray(vao);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_3D, type_buffer_id);
+    glBindBuffer(GL_TEXTURE_BUFFER, type_buffer_id);
+    glBindTexture(GL_TEXTURE_BUFFER, type_buffer_tex_handle);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
     //        glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0,
