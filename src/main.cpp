@@ -10,6 +10,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <array>
+#include <random>
 #include <iostream>
 
 void process_input(GLFWwindow *window, float &rotate_x, float& rotate_z, float& zoom) {
@@ -57,17 +58,30 @@ const char *vertexShaderSource =
     "}\0";
 const char *fragmentShaderSource =
     "#version 460 core\n"
+    "uniform sampler3D type_buffer;\n"
     "in vec3 pass_position;\n"
     "in vec3 pass_normal;\n"
     "in vec4 pass_color;\n"
     "out vec4 FragColor;\n"
     "const vec3 light_position = vec3(1.0, 1.0, 0.0);\n"
+    "vec3 palette[8] = {\n"
+    "    vec3(0.0, 0.0, 0.0),\n"
+    "    vec3(0.0, 0.0, 1.0),\n"
+    "    vec3(0.0, 1.0, 0.0),\n"
+    "    vec3(0.0, 1.0, 1.0),\n"
+    "    vec3(1.0, 0.0, 0.0),\n"
+    "    vec3(1.0, 0.0, 1.0),\n"
+    "    vec3(1.0, 1.0, 0.0),\n"
+    "    vec3(1.0, 1.0, 1.0)\n"
+    "};\n"
     "void main()\n"
     "{\n"
     "   uint x = uint(round(pass_position.x + 0.5 + 250));\n"
     "   uint y = uint(round(pass_position.y + 0.5 + 50));\n"
     "   uint z = uint(round(pass_position.z + 0.5 + 125));\n"
-    "   vec4 color = vec4(float(x % 10) * 0.1, float(y % 10) * 0.1, float(z % 10) * 0.1, 1.0f);\n"
+//    "   vec4 color = vec4(float(x % 10) * 0.1, float(y % 10) * 0.1, float(z % 10) * 0.1, 1.0f);\n"
+    "   float index = texture(type_buffer, vec3(ivec3(x, y, z))).r;\n"
+    "   vec4 color = vec4(palette[uint(index * 255.0)], 1.0f);\n"
     "   vec3 p = pass_position;\n"
     "   vec3 N = normalize(pass_normal.xyz);\n"
     "   vec3 L = normalize(light_position - p);\n"
@@ -188,6 +202,27 @@ int main() {
 
 //  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+  GLuint type_buffer_id;
+  std::vector<std::byte> type_buffer(500 * 100 * 250);
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<unsigned int> uint_distribution(0, 7);
+  for(auto& type_id: type_buffer) {
+      type_id = (std::byte)uint_distribution(gen);
+  }
+
+  glGenTextures(1, &type_buffer_id);
+  glBindTexture(GL_TEXTURE_3D, type_buffer_id);
+
+  glTexStorage3D(GL_TEXTURE_3D, 1, GL_R8, 500, 100, 250);
+  glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, 500, 100, 250, GL_RED, GL_UNSIGNED_BYTE, type_buffer.data());
+
+  glBindTexture(GL_TEXTURE_3D, 0);
+
+  glActiveTexture(GL_TEXTURE0);
+  GLuint sampler_location = glGetUniformLocation(shaderProgram, "type_buffer");
+  glUniform1i(sampler_location, 0);
+
   const auto projection_loc = glGetUniformLocation(shaderProgram, "projection");
   const auto camera_loc = glGetUniformLocation(shaderProgram, "camera");
   const auto world_loc = glGetUniformLocation(shaderProgram, "world");
@@ -206,8 +241,6 @@ int main() {
     auto world_transform = transform::from_rotation(q_x_rot * q_z_rot);
     fps.add_timepoint();
     std::cout << "fps: " << fps.value() << "\n";
-    //        const auto world = glm::rotate(glm::mat4(1.0f), rotation,
-    //        glm::vec3(1.0f, 0.0f, 1.0f));
     const auto world = glm::mat4(1.0f);
     rotation += 0.01f;
     process_input(window, rotate_x, rotate_z, zoom);
@@ -219,6 +252,8 @@ int main() {
     glUniformMatrix4fv(world_loc, 1, GL_FALSE,
                        glm::value_ptr(world_transform.to_matrix()));
     glBindVertexArray(vao);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_3D, type_buffer_id);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
     //        glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0,

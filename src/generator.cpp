@@ -301,14 +301,13 @@ build_lattice() {
     vertices.insert(vertices.end(), s.begin(), s.end());
     indices.insert(indices.end(), o_indices.cbegin(), o_indices.cend());
   }
-  /*
   for (int y = -size_y / 2; y < size_y / 2; y++) {
     auto s = cube_bottom(glm::vec3(0.0f, y + 0.5, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, alpha)); 
     scale(s, glm::vec3(size_y, 1.0f, size_z));
     const auto o_indices = offset_indices(cube_indices, vertices.size());
     vertices.insert(vertices.end(), s.begin(), s.end());
     indices.insert(indices.end(), o_indices.cbegin(), o_indices.cend());
-  }*/
+  }
   for (int z = -size_z / 2; z < size_z / 2; z++) {
     auto s = cube_back(glm::vec3(0.0f, 0.0f, z + 0.5), glm::vec4(1.0f, 0.0f, 0.0f, alpha)); 
     scale(s, glm::vec3(size_x, size_y, 1.0f));
