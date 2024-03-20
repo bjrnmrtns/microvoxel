@@ -141,8 +141,8 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                         //yaw = 0.0;
                         //pitch = 0.0;
 
-//                        mvp_uniform.view = glam::Mat4::look_at_rh(position, position + direction, glam::Vec3::new(0.0, 1.0, 0.0));
-                        mvp_uniform.view = glam::Mat4::look_at_rh(glam::Vec3::new(0.0, 100.0, 0.0), glam::Vec3::new(0.0, 0.0, 0.0), glam::Vec3::new(1.0, 0.0, 0.0));
+//                        mvp_uniform.view = glam::Mat4::look_at_rh(position, position + direction, glam::Vec3::new(1.0, 0.0, 0.0));
+                        mvp_uniform.view = glam::Mat4::look_at_rh(glam::Vec3::new(0.0, 5.0, 0.0), glam::Vec3::new(0.0, 0.0, 0.0), glam::Vec3::new(1.0, 0.0, 0.0));
                         queue.write_buffer(&uniform_buffer, 0, bytemuck::cast_slice(&[mvp_uniform]));
 
                         let frame = surface
@@ -173,7 +173,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                                 });
                             rpass.set_pipeline(&render_pipeline);
                             rpass.set_bind_group(0, &mvp_bind_group, &[]);
-                            rpass.draw(0..3, 0..1);
+                            rpass.draw(0..6, 0..1);
                         }
 
                         queue.submit(Some(encoder.finish()));
