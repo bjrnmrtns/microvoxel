@@ -1,3 +1,13 @@
+// uniform vertex shader
+struct mvp_uniform {
+    projection: mat4x4<f32>,
+    view: mat4x4<f32>,
+    world: mat4x4<f32>,
+};
+
+@group(0) @binding(0)
+var<uniform> mvp: mvp_uniform;
+
 @vertex
 fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) vec4<f32> {
     var direction = vec3f(0.0f, -1.0f, 0.0f);
@@ -7,12 +17,12 @@ fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) ve
       vec3f(-1.0, 1.0, 1.0), //2
       vec3f(1.0, 1.0, 1.0), //3
       vec3f(-1.0, 1.0, -1.0), //6
-      vec3f(1.0, 1.0, -1.0), //7
       vec3f(1.0, 1.0, 1.0), //3
       vec3f(1.0, 1.0, -1.0), //7
       vec3f(-1.0, 1.0, -1.0), //6
     );
-    return vec4<f32>(top_face[in_vertex_index % 6].xy, 0.0f , 1.0);
+    return vec4<f32>(top_face[in_vertex_index % 6].xz, 0.0f , 1.0);
+    return mvp.projection * mvp.view * mvp.world * vec4<f32>(top_face[in_vertex_index % 6].xz, 0.0f , 1.0);
 }
 
 @fragment
