@@ -1,8 +1,18 @@
 @vertex
 fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) vec4<f32> {
-    let x = f32(i32(in_vertex_index) - 1);
-    let y = f32(i32(in_vertex_index & 1u) * 2 - 1);
-    return vec4<f32>(x, y, 0.0, 1.0);
+    var direction = vec3f(0.0f, -1.0f, 0.0f);
+    // 2 3 6 7
+    // 2 3 6 3 7 6
+    var top_face = array(
+      vec3f(-1.0, 1.0, 1.0), //2
+      vec3f(1.0, 1.0, 1.0), //3
+      vec3f(-1.0, 1.0, -1.0), //6
+      vec3f(1.0, 1.0, -1.0), //7
+      vec3f(1.0, 1.0, 1.0), //3
+      vec3f(1.0, 1.0, -1.0), //7
+      vec3f(-1.0, 1.0, -1.0), //6
+    );
+    return vec4<f32>(top_face[in_vertex_index % 6].xy, 0.0f , 1.0);
 }
 
 @fragment

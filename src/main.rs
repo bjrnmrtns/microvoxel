@@ -1,9 +1,9 @@
+mod camera;
+
 use std::borrow::Cow;
 
 use winit::{
-    event::{Event, WindowEvent},
-    event_loop::EventLoop,
-    window::{Window, WindowBuilder},
+    event::{self, Event, WindowEvent}, event_loop::EventLoop, keyboard::PhysicalKey, window::{Window, WindowBuilder}
 };
 
 async fn run(event_loop: EventLoop<()>, window: Window) {
@@ -112,6 +112,23 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                         queue.submit(Some(encoder.finish()));
                         frame.present();
                     }
+                    WindowEvent::KeyboardInput { event: winit::event::KeyEvent { state, logical_key, .. }, .. } => {
+                        match logical_key {
+                            winit::keyboard::Key::Named(winit::keyboard::NamedKey::Escape) => {
+                                target.exit()
+                            }
+                            keycode => {
+                                match keycode {
+                                    winit::keyboard::Key::Character(c) => match c.as_str() {
+                                        "w" => target.exit(),
+                                        _ => ()
+                                    }
+                                    _ => ()
+                                }
+                            }
+                            _ => ()
+                        }
+                    }
                     WindowEvent::CloseRequested => target.exit(),
                     _ => {}
                 };
@@ -122,7 +139,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
 
 fn main() {
     let event_loop = EventLoop::new().unwrap();
-    let window = WindowBuilder::new().build(&event_loop).unwrap();
+    let window = WindowBuilder::new().with_title("microvoxel").with_resizable(false).build(&event_loop).unwrap();
     
     env_logger::init();
     pollster::block_on(run(event_loop, window));
