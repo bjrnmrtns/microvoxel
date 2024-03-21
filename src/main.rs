@@ -36,10 +36,9 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor { label: None, source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("shader.wgsl"))),});
 
     let mut mvp_uniform = Uniform::default();
-    let mut direction = glam::Vec3::new(0.0, -1.0, 0.0);
-    let mut position = glam::Vec3::new(0.0, 2.0, 0.0);
+    let mut last_mouse_position : Option<(f32, f32)> = None;
+    let mut current_mouse_position : Option<(f32, f32)> = None;
     mvp_uniform.projection = glam::Mat4::perspective_rh(45.0, window.inner_size().width as f32 / window.inner_size().height as f32, 1.0, 1000.0 );
-    mvp_uniform.view = glam::Mat4::look_at_rh(glam::Vec3::new(0.0, 100.0, 0.0), glam::Vec3::new(0.0, 0.0, 0.0), glam::Vec3::new(1.0, 0.0, 0.0));
 
     let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Uniform buffer"),
@@ -132,9 +131,6 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                         window.request_redraw();
                     }
                     WindowEvent::RedrawRequested => {
-
-//                        mvp_uniform.view = glam::Mat4::look_at_rh(position, position + direction, glam::Vec3::new(0.0, 0.0, 1.0));
-//                        mvp_uniform.view = glam::Mat4::from_quat(glam::Quat::from_rotation_x(3.14 / 2.0)) * glam::Mat4::from_translation(glam::Vec3::new(0.0, -5.0, 0.0)) ;//camera.view_matrix();
                         mvp_uniform.view = camera.view_matrix();
                         queue.write_buffer(&uniform_buffer, 0, bytemuck::cast_slice(&[mvp_uniform]));
 
@@ -185,10 +181,6 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                                         "a" => camera.update(0.0, -0.1, 0.0, 0.0),
                                         "s" => camera.update(-0.1, 0.0, 0.0, 0.0),
                                         "d" => camera.update(0.0, 0.1, 0.0, 0.0),
-                                        "z" => camera.update(0.0, 0.0, 0.1, 0.0),
-                                        "x" => camera.update(0.0, 0.0, -0.1, 0.0),
-                                        "c" => camera.update(0.0, 0.0, 0.0, 0.1),
-                                        "v" => camera.update(0.0, 0.0, 0.0, -0.1),
                                         _ => ()
                                     }
                                     _ => ()
@@ -196,6 +188,14 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                             }
                             _ => ()
                         }
+                    }
+                    WindowEvent::CursorMoved { position, .. } => {
+                        current_mouse_position = Some((position.x as f32, position.y as f32));
+                        if let (Some(last_mouse_position), Some(current_mouse_position)) = (last_mouse_position, current_mouse_position) {
+                            let delta = (last_mouse_position.0 - current_mouse_position.0, last_mouse_position.1 - current_mouse_position.1);
+                            camera.update(0.0, 0.0, delta.0, -delta.1); 
+                        }
+                        last_mouse_position = current_mouse_position;
                     }
                     WindowEvent::CloseRequested => target.exit(),
                     _ => {}

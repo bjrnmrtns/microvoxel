@@ -25,9 +25,10 @@ x add 10x10x2 chunks
   + create a global 3d texture of 1 byte per voxel and index into it and sample from a color palette (256 colors)
   + implement randomizer of mesh so we can see how fast we can update the global lookup table
 
-2024-03-19
-- create a freelook camera
+2024-03-21
++ create a freelook camera
   + create transform class
++ set uniforms on shaders for viewing and other stuff
 - investigate a sparse 3d texture (maybe octree like)
 - start using non-indexed rendering
 - maybe compress vertices, as we only need the direction and x or y or z position
@@ -35,8 +36,7 @@ x add 10x10x2 chunks
 - we have 6 faces, we only need to render 3 sides add true culling in software
 - start implementing what we have currently in cpp in rust/wgpu
 - implement deferred renderer
-- write buffer wgpu::Queue::write_buffer_with to gpu to sample from
-- set uniforms on shaders for viewing and other stuff
+- write buffer wgpu::Queue::write_texture to gpu to sample from
 - generate triangles from vertex index and unforms only
   - first do fixed sizes without uniforms
   - now with uniforms

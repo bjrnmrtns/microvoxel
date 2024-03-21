@@ -1,5 +1,5 @@
-const ROTATION_SPEED: f32 = 5.0;
-const FREE_LOOK_MOVEMENT_SPEED: f32 = 20.0;
+const ROTATION_SPEED: f32 = 0.01;
+const FREE_LOOK_MOVEMENT_SPEED: f32 = 1.0;
 
 pub struct Camera {
     position: glam::Vec3,
