@@ -21,7 +21,7 @@ fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) ve
       vec3f(1.0, 1.0, -1.0), //7
       vec3f(-1.0, 1.0, -1.0), //6
     );
-    return mvp.projection * mvp.view * mvp.world * vec4<f32>(top_face[in_vertex_index % 6].x, 0.0f, top_face[in_vertex_index % 6].z, 1.0);
+    return mvp.projection * mvp.view * mvp.world * vec4<f32>(top_face[in_vertex_index % 6].x, -2.0f, top_face[in_vertex_index % 6].z, 1.0);
 }
 
 @fragment

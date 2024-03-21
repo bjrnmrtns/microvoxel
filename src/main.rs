@@ -36,8 +36,8 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor { label: None, source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("shader.wgsl"))),});
 
     let mut mvp_uniform = Uniform::default();
-    let mut direction = glam::Vec3::new(0.0, 0.0, -1.0);
-    let mut position = glam::Vec3::new(0.0, 0.0, 0.0);
+    let mut direction = glam::Vec3::new(0.0, -1.0, 0.0);
+    let mut position = glam::Vec3::new(0.0, 2.0, 0.0);
     mvp_uniform.projection = glam::Mat4::perspective_rh(45.0, window.inner_size().width as f32 / window.inner_size().height as f32, 1.0, 1000.0 );
     mvp_uniform.view = glam::Mat4::look_at_rh(glam::Vec3::new(0.0, 100.0, 0.0), glam::Vec3::new(0.0, 0.0, 0.0), glam::Vec3::new(1.0, 0.0, 0.0));
 
@@ -107,6 +107,9 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     surface.configure(&device, &config);
 
     let window = &window;
+    mvp_uniform.projection = glam::Mat4::perspective_rh(45.0, window.inner_size().width as f32 / window.inner_size().height as f32, 1.0, 1000.0 );
+    let mut camera = camera::Camera::new();
+
     event_loop
         .run(move |event, target| {
             // Have the closure take ownership of the resources.
@@ -119,11 +122,6 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                 event,
             } = event
             {
-                let mut pitch = 0.0;
-                let mut yaw = 0.0;
-                let mut forward  = 0.0;
-                let mut right = 0.0;
-                mvp_uniform.projection = glam::Mat4::perspective_rh(45.0, window.inner_size().width as f32 / window.inner_size().height as f32, 1.0, 1000.0 );
                 match event {
                     WindowEvent::Resized(new_size) => {
                         // Reconfigure the surface with the new size
@@ -134,15 +132,10 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                         window.request_redraw();
                     }
                     WindowEvent::RedrawRequested => {
-                        position = camera::freelook_move(position, direction, forward, right);
-                        direction = camera::freelook_rotate(direction, yaw, pitch);
-                        //forward = 0.0;
-                        //right = 0.0;
-                        //yaw = 0.0;
-                        //pitch = 0.0;
 
-//                        mvp_uniform.view = glam::Mat4::look_at_rh(position, position + direction, glam::Vec3::new(1.0, 0.0, 0.0));
-                        mvp_uniform.view = glam::Mat4::look_at_rh(glam::Vec3::new(0.0, 5.0, 0.0), glam::Vec3::new(0.0, 0.0, 0.0), glam::Vec3::new(1.0, 0.0, 0.0));
+//                        mvp_uniform.view = glam::Mat4::look_at_rh(position, position + direction, glam::Vec3::new(0.0, 0.0, 1.0));
+//                        mvp_uniform.view = glam::Mat4::from_quat(glam::Quat::from_rotation_x(3.14 / 2.0)) * glam::Mat4::from_translation(glam::Vec3::new(0.0, -5.0, 0.0)) ;//camera.view_matrix();
+                        mvp_uniform.view = camera.view_matrix();
                         queue.write_buffer(&uniform_buffer, 0, bytemuck::cast_slice(&[mvp_uniform]));
 
                         let frame = surface
@@ -178,6 +171,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
 
                         queue.submit(Some(encoder.finish()));
                         frame.present();
+                        window.request_redraw();
                     }
                     WindowEvent::KeyboardInput { event: winit::event::KeyEvent { state, logical_key, .. }, .. } => {
                         match logical_key {
@@ -187,10 +181,14 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                             keycode => {
                                 match keycode {
                                     winit::keyboard::Key::Character(c) => match c.as_str() {
-                                        "w" => forward += 0.1,
-                                        "a" => right -= 0.1,
-                                        "s" => forward -= 0.1,
-                                        "d" => right += 0.1,
+                                        "w" => camera.update(0.1, 0.0, 0.0, 0.0),
+                                        "a" => camera.update(0.0, -0.1, 0.0, 0.0),
+                                        "s" => camera.update(-0.1, 0.0, 0.0, 0.0),
+                                        "d" => camera.update(0.0, 0.1, 0.0, 0.0),
+                                        "z" => camera.update(0.0, 0.0, 0.1, 0.0),
+                                        "x" => camera.update(0.0, 0.0, -0.1, 0.0),
+                                        "c" => camera.update(0.0, 0.0, 0.0, 0.1),
+                                        "v" => camera.update(0.0, 0.0, 0.0, -0.1),
                                         _ => ()
                                     }
                                     _ => ()
