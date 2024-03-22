@@ -29,6 +29,8 @@ x add 10x10x2 chunks
 + create a freelook camera
   + create transform class
 + set uniforms on shaders for viewing and other stuff
+
+2024-03-22
 - investigate a sparse 3d texture (maybe octree like)
 - start using non-indexed rendering
 - maybe compress vertices, as we only need the direction and x or y or z position

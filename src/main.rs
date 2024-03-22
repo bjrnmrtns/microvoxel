@@ -14,9 +14,36 @@ struct Uniform {
     pub view: glam::Mat4,
     pub world: glam::Mat4,
 }
-
 unsafe impl bytemuck::Pod for Uniform {}
 unsafe impl bytemuck::Zeroable for Uniform {}
+
+struct Lattice {
+    pub data: Vec<u32>,
+    size_x: usize,
+    size_y: usize,
+    size_z: usize,
+}
+impl Lattice {
+    pub fn new(size_x: usize, size_y: usize, size_z: usize) -> Self {
+        Self {
+            data: vec!(0; size_x * size_y * size_z / 4),
+            size_x,
+            size_y,
+            size_z,
+        }
+    }
+    pub fn set_index(&mut self, index: usize, value: u8) {
+        let array_index = index / 4;
+        let u32_index = index % 4;
+        let shift = 8 * (3 - u32_index);
+        let voxel = self.data[array_index] & !(0xFF << shift); // zero 8 bits
+        self.data[array_index] = voxel | (value as u32) << shift; 
+    }
+    pub fn set(&mut self, x: usize, y: usize, z: usize, value: u8) {
+        let index = x + (z * self.size_x) + (y * self.size_x * self.size_z);
+        self.set_index(index, value); 
+    }
+}
 
 async fn run(event_loop: EventLoop<()>, window: Window) {
 
@@ -36,6 +63,12 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor { label: None, source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("shader.wgsl"))),});
 
     let mut mvp_uniform = Uniform::default();
+
+    let size_x = 1024;
+    let size_y = 128;
+    let size_z = 1024;
+    let mut lattice = Lattice::new(size_x, size_y, size_z);
+    lattice.set(23, 94, 122, 4);
     let mut last_mouse_position : Option<(f32, f32)> = None;
     let mut current_mouse_position : Option<(f32, f32)> = None;
     mvp_uniform.projection = glam::Mat4::perspective_rh(45.0, window.inner_size().width as f32 / window.inner_size().height as f32, 1.0, 1000.0 );
@@ -46,6 +79,12 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
     });
 
+    let lattice_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("lattice buffer"),
+        contents: bytemuck::cast_slice(lattice.data.as_slice()),
+        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+    });
+
     let mvp_bind_group_layout = device.create_bind_group_layout(
         &wgpu::BindGroupLayoutDescriptor {
             label: Some("mvp_bind_group_layout"),
@@ -54,6 +93,12 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                     binding: 0,
                     visibility: wgpu::ShaderStages::VERTEX,
                     ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: None },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only: true }, has_dynamic_offset: false, min_binding_size: None },
                     count: None,
                 },
             ],
@@ -67,6 +112,11 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
             wgpu::BindGroupEntry {
                 binding: 0,
                 resource: uniform_buffer.as_entire_binding(),
+                
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: lattice_buffer.as_entire_binding(),
                 
             }
         ],
