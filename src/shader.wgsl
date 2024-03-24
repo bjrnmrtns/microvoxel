@@ -5,6 +5,12 @@ struct mvp_uniform {
     world: mat4x4<f32>,
 };
 
+struct LatticeHeader {
+    size_x : u32,
+    size_y : u32,
+    size_z : u32,
+};
+
 // lattice used in fragment shader
 struct Lattice {
     data: array<u32>,
@@ -15,6 +21,9 @@ var<uniform> mvp: mvp_uniform;
 
 @group(0) @binding(1)
 var<storage, read> lattice : Lattice;
+
+@group(0) @binding(2)
+var<storage, read> lattice_header : LatticeHeader;
 
 fn lattice_get_index(index: u32) -> u32 {
     var array_index = index / 4;
@@ -30,21 +39,72 @@ fn lattice_get(x: u32, y: u32, z: u32) -> u32 {
     return lattice_get_index(index); 
 }
 
+// first render y than z then x
+// 0..size_y , size_y..size_y + size_z, size_y + size_z..size_y + size_z + size_x
+// 0..127 , 128..1152, 1152..2176 
+// return 0 -> y-side, 1 -> z-side, 2 -> y-side
+fn lattice_vertex_index_to_side(vertex_index: u32) -> u32 {
+    var face_index : u32 = vertex_index / 6;    
+    var lattice_direction : u32 = u32((face_index / lattice_header.size_y) > 0) + u32((face_index / (lattice_header.size_y + lattice_header.size_z)) > 0);
+    return lattice_direction;
+}
 
-@vertex
-fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) vec4<f32> {
-    var direction = vec3f(0.0f, -1.0f, 0.0f);
-    // 2 3 6 7
-    // 2 3 6 3 7 6
-    var top_face = array(
+struct Face
+{
+    face : array<vec3f, 6>,
+    start: vec3f,
+    step: vec3f,
+    // only denoting which axis need to be scaled
+    scale: vec3f,
+};
+
+const lattice_info = array<Face, 3>(
+    Face(array(
       vec3f(-1.0, 1.0, 1.0), //2
       vec3f(1.0, 1.0, 1.0), //3
       vec3f(-1.0, 1.0, -1.0), //6
       vec3f(1.0, 1.0, 1.0), //3
       vec3f(1.0, 1.0, -1.0), //7
       vec3f(-1.0, 1.0, -1.0), //6
-    );
-    return mvp.projection * mvp.view * mvp.world * vec4<f32>(top_face[in_vertex_index % 6].x, -2.0f, top_face[in_vertex_index % 6].z, 1.0);
+    ),
+      vec3f(0.0f, 0.0f, 0.0f),
+      vec3f(0.0f, -1.0f, 0.0f),
+      vec3f(1.0f, 0.0f, 1.0f),
+    ),
+    Face(array(
+      vec3f(-1.0, 1.0, 1.0), //2
+      vec3f(1.0, 1.0, 1.0), //3
+      vec3f(-1.0, 1.0, -1.0), //6
+      vec3f(1.0, 1.0, 1.0), //3
+      vec3f(1.0, 1.0, -1.0), //7
+      vec3f(-1.0, 1.0, -1.0), //6
+    ), 
+      vec3f(0.0f, 0.0f, 0.0f),
+      vec3f(0.0f, -1.0f, 0.0f),
+      vec3f(1.0f, 0.0f, 1.0f),
+    ),
+    Face(array(
+      vec3f(-1.0, 1.0, 1.0), //2
+      vec3f(1.0, 1.0, 1.0), //3
+      vec3f(-1.0, 1.0, -1.0), //6
+      vec3f(1.0, 1.0, 1.0), //3
+      vec3f(1.0, 1.0, -1.0), //7
+      vec3f(-1.0, 1.0, -1.0), //6
+    ), 
+      vec3f(0.0f, 0.0f, 0.0f),
+      vec3f(0.0f, -1.0f, 0.0f),
+      vec3f(1.0f, 0.0f, 1.0f),
+    ),
+);
+
+@vertex
+fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) vec4<f32> {
+    var side = lattice_vertex_index_to_side(in_vertex_index);
+    var face = lattice_info[0].face;
+    var start = lattice_info[0].start;
+    var step = lattice_info[0].step;
+    var face_index : u32 = in_vertex_index / 6;
+    return mvp.projection * mvp.view * mvp.world * vec4<f32>(face[in_vertex_index % 6] + start + step * f32(face_index), 1.0);
 }
 
 @fragment

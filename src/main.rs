@@ -45,6 +45,27 @@ impl Lattice {
     }
 }
 
+#[repr(C)]
+#[derive(Debug, Copy, Clone, Default)]
+struct LatticeHeader {
+    size_x: u32,
+    size_y: u32,
+    size_z: u32,
+}
+
+impl LatticeHeader {
+    pub fn new(size_x: u32, size_y: u32, size_z: u32) -> Self {
+        Self {
+            size_x,
+            size_y,
+            size_z,
+        }
+    }
+}
+
+unsafe impl bytemuck::Pod for LatticeHeader {}
+unsafe impl bytemuck::Zeroable for LatticeHeader {}
+
 async fn run(event_loop: EventLoop<()>, window: Window) {
 
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
@@ -68,6 +89,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     let size_y = 128;
     let size_z = 1024;
     let mut lattice = Lattice::new(size_x, size_y, size_z);
+    let lattice_header = LatticeHeader::new(size_x as u32, size_y as u32, size_z as u32);
     lattice.set(23, 94, 122, 4);
     let mut last_mouse_position : Option<(f32, f32)> = None;
     let mut current_mouse_position : Option<(f32, f32)> = None;
@@ -82,6 +104,12 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     let lattice_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("lattice buffer"),
         contents: bytemuck::cast_slice(lattice.data.as_slice()),
+        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+    });
+    
+    let lattice_header_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("lattice header buffer"),
+        contents: bytemuck::cast_slice(&[lattice_header]),
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
     });
 
@@ -101,6 +129,12 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                     ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only: true }, has_dynamic_offset: false, min_binding_size: None },
                     count: None,
                 },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only: true }, has_dynamic_offset: false, min_binding_size: None },
+                    count: None,
+                },
             ],
         }
     );
@@ -117,6 +151,11 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
             wgpu::BindGroupEntry {
                 binding: 1,
                 resource: lattice_buffer.as_entire_binding(),
+                
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: lattice_header_buffer.as_entire_binding(),
                 
             }
         ],
@@ -212,7 +251,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                                 });
                             rpass.set_pipeline(&render_pipeline);
                             rpass.set_bind_group(0, &mvp_bind_group, &[]);
-                            rpass.draw(0..6, 0..1);
+                            rpass.draw(0..((lattice_header.size_x + lattice_header.size_y + lattice_header.size_z) * 6), 0..1);
                         }
 
                         queue.submit(Some(encoder.finish()));
