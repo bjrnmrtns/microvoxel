@@ -99,6 +99,15 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                                                     glam::Vec4::new(-1.0, 0.0, -1.0, 1.0), //6
                                                    ], glam::Vec4::new(0.0, 0.0, 0.0, 1.0), glam::Vec4::new(0.0, -1.0, 0.0, 1.0), glam::Vec4::new(1.0 as f32, 1.0 as f32, 1.0 as f32, 1.0));
 
+    let lattice_header_z = LatticeHeader::new([glam::Vec4::new(-1.0, -1.0, 0.0, 1.0), //0
+                                               glam::Vec4::new(1.0, -1.0, 0.0, 1.0), //1
+                                               glam::Vec4::new(-1.0, 1.0, 0.0, 1.0), //2
+                                               glam::Vec4::new(1.0, -1.0, 0.0, 1.0), //1
+                                               glam::Vec4::new(1.0, 1.0, 0.0, 1.0), //3
+                                               glam::Vec4::new(-1.0, 1.0, 0.0, 1.0), //2
+                                              ], glam::Vec4::new(-1.0, 1.0, 0.0, 1.0), glam::Vec4::new(0.0, 0.0, -1.0, 1.0), glam::Vec4::new(1.0 as f32, 1.0 as f32, 1.0 as f32, 1.0));
+
+
     lattice.set(23, 94, 122, 4);
     let mut last_mouse_position : Option<(f32, f32)> = None;
     let mut current_mouse_position : Option<(f32, f32)> = None;
@@ -260,8 +269,9 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                                 });
                             rpass.set_pipeline(&render_pipeline);
                             rpass.set_bind_group(0, &mvp_bind_group, &[]);
-//                            rpass.draw(0..((lattice_header.size_x + lattice_header.size_y + lattice_header.size_z) * 6), 0..1);
                             rpass.draw(0..size_y as u32 * 6, 0..1);
+                            queue.write_buffer(&lattice_header_buffer, 0, bytemuck::cast_slice(&[lattice_header_z]));
+                            rpass.draw(0..size_z as u32 * 6, 0..1);
 
                         }
 
