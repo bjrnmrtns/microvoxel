@@ -68,6 +68,39 @@ impl LatticeHeader {
 unsafe impl bytemuck::Pod for LatticeHeader {}
 unsafe impl bytemuck::Zeroable for LatticeHeader {}
 
+#[repr(C)]
+#[derive(Debug, Copy, Clone, Default)]
+struct LatticeHeaders
+{
+    headers: [LatticeHeader; 2],
+}
+
+impl LatticeHeaders {
+    pub fn new() -> Self {
+        Self {
+            headers: [LatticeHeader::new([glam::Vec4::new(-1.0, 0.0, 1.0, 1.0), //2
+                                                    glam::Vec4::new(1.0, 0.0, 1.0, 1.0), //3
+                                                    glam::Vec4::new(-1.0, 0.0, -1.0, 1.0), //6
+                                                    glam::Vec4::new(1.0, 0.0, 1.0, 1.0), //3
+                                                    glam::Vec4::new(1.0, 0.0, -1.0, 1.0), //7
+                                                    glam::Vec4::new(-1.0, 0.0, -1.0, 1.0), //6
+                                                   ], glam::Vec4::new(0.0, 0.0, 0.0, 1.0), glam::Vec4::new(0.0, -1.0, 0.0, 1.0), glam::Vec4::new(1.0 as f32, 1.0 as f32, 1.0 as f32, 1.0)),
+                     LatticeHeader::new([glam::Vec4::new(-1.0, -1.0, 0.0, 1.0), //0
+                                               glam::Vec4::new(1.0, -1.0, 0.0, 1.0), //1
+                                               glam::Vec4::new(-1.0, 1.0, 0.0, 1.0), //2
+                                               glam::Vec4::new(1.0, -1.0, 0.0, 1.0), //1
+                                               glam::Vec4::new(1.0, 1.0, 0.0, 1.0), //3
+                                               glam::Vec4::new(-1.0, 1.0, 0.0, 1.0), //2
+                                              ], glam::Vec4::new(-1.0, 1.0, 0.0, 1.0), glam::Vec4::new(0.0, 0.0, -1.0, 1.0), glam::Vec4::new(1.0 as f32, 1.0 as f32, 1.0 as f32, 1.0))
+            ],
+        }
+    }
+}
+
+unsafe impl bytemuck::Pod for LatticeHeaders {}
+unsafe impl bytemuck::Zeroable for LatticeHeaders {}
+
+
 async fn run(event_loop: EventLoop<()>, window: Window) {
 
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
@@ -91,22 +124,8 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     let size_y = 128;
     let size_z = 1024;
     let mut lattice = Lattice::new(size_x, size_y, size_z);
-    let lattice_header_y_down = LatticeHeader::new([glam::Vec4::new(-1.0, 0.0, 1.0, 1.0), //2
-                                                    glam::Vec4::new(1.0, 0.0, 1.0, 1.0), //3
-                                                    glam::Vec4::new(-1.0, 0.0, -1.0, 1.0), //6
-                                                    glam::Vec4::new(1.0, 0.0, 1.0, 1.0), //3
-                                                    glam::Vec4::new(1.0, 0.0, -1.0, 1.0), //7
-                                                    glam::Vec4::new(-1.0, 0.0, -1.0, 1.0), //6
-                                                   ], glam::Vec4::new(0.0, 0.0, 0.0, 1.0), glam::Vec4::new(0.0, -1.0, 0.0, 1.0), glam::Vec4::new(1.0 as f32, 1.0 as f32, 1.0 as f32, 1.0));
 
-    let lattice_header_z = LatticeHeader::new([glam::Vec4::new(-1.0, -1.0, 0.0, 1.0), //0
-                                               glam::Vec4::new(1.0, -1.0, 0.0, 1.0), //1
-                                               glam::Vec4::new(-1.0, 1.0, 0.0, 1.0), //2
-                                               glam::Vec4::new(1.0, -1.0, 0.0, 1.0), //1
-                                               glam::Vec4::new(1.0, 1.0, 0.0, 1.0), //3
-                                               glam::Vec4::new(-1.0, 1.0, 0.0, 1.0), //2
-                                              ], glam::Vec4::new(-1.0, 1.0, 0.0, 1.0), glam::Vec4::new(0.0, 0.0, -1.0, 1.0), glam::Vec4::new(1.0 as f32, 1.0 as f32, 1.0 as f32, 1.0));
-
+    let lattice_headers = LatticeHeaders::new();
 
     lattice.set(23, 94, 122, 4);
     let mut last_mouse_position : Option<(f32, f32)> = None;
@@ -127,7 +146,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     
     let lattice_header_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("lattice header buffer"),
-        contents: bytemuck::cast_slice(&[lattice_header_y_down]),
+        contents: bytemuck::cast_slice(&[lattice_headers]),
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
     });
 
@@ -259,7 +278,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                                         view: &view,
                                         resolve_target: None,
                                         ops: wgpu::Operations {
-                                            load: wgpu::LoadOp::Clear(wgpu::Color::GREEN),
+                                            load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                                             store: wgpu::StoreOp::Store,
                                         },
                                     })],
@@ -270,8 +289,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                             rpass.set_pipeline(&render_pipeline);
                             rpass.set_bind_group(0, &mvp_bind_group, &[]);
                             rpass.draw(0..size_y as u32 * 6, 0..1);
-                            queue.write_buffer(&lattice_header_buffer, 0, bytemuck::cast_slice(&[lattice_header_z]));
-                            rpass.draw(0..size_z as u32 * 6, 0..1);
+                            rpass.draw(0..size_z as u32 * 6, 1..2);
 
                         }
 

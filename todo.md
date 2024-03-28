@@ -42,3 +42,5 @@ x add 10x10x2 chunks
 - start implementing what we have currently in cpp in rust/wgpu
 - implement deferred renderer
 - use instance buffer to have different header data for x y z and -x -y -z
+  + add instanced rendering for two
+  

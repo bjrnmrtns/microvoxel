@@ -12,6 +12,10 @@ struct LatticeHeader {
     size: vec4f,
 };
 
+struct LatticeHeaders {
+    data: array<LatticeHeader>,
+};
+
 // lattice used in fragment shader
 struct Lattice {
     data: array<u32>,
@@ -24,7 +28,7 @@ var<uniform> mvp: mvp_uniform;
 var<storage, read> lattice : Lattice;
 
 @group(0) @binding(2)
-var<storage, read> lattice_header : LatticeHeader;
+var<storage, read> lattice_headers : LatticeHeaders;
 
 fn lattice_get_index(index: u32) -> u32 {
     var array_index = index / 4;
@@ -41,8 +45,9 @@ fn lattice_get(x: u32, y: u32, z: u32) -> u32 {
 }
 
 @vertex
-fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) vec4<f32> {
+fn vs_main(@builtin(vertex_index) in_vertex_index: u32, @builtin(instance_index) in_instance_index: u32) -> @builtin(position) vec4<f32> {
     var face_nr : u32 = in_vertex_index / 6;
+    var lattice_header = lattice_headers.data[in_instance_index];
     var face_scaled = lattice_header.face[in_vertex_index % 6].xyz * (lattice_header.size / 2.0).xyz;
     return mvp.projection * mvp.view * mvp.world * vec4f((face_scaled.xyz + lattice_header.start.xyz + (lattice_header.step.xyz * f32(face_nr))), 1.0);
 }
