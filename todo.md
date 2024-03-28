@@ -31,14 +31,13 @@ x add 10x10x2 chunks
 + set uniforms on shaders for viewing and other stuff
 
 2024-03-22
++ start using non-indexed rendering
++ maybe compress vertices, as we only need the direction and x or y or z position
++ write buffer wgpu::Queue::write_texture to gpu to sample from
++ generate triangles from vertex index and unforms only
+  + first do fixed sizes without uniforms
+  + now with uniforms
 - investigate a sparse 3d texture (maybe octree like)
-- start using non-indexed rendering
-- maybe compress vertices, as we only need the direction and x or y or z position
-- because we look from the top render from top to bottom as overdraw will be minimized
 - we have 6 faces, we only need to render 3 sides add true culling in software
 - start implementing what we have currently in cpp in rust/wgpu
 - implement deferred renderer
-- write buffer wgpu::Queue::write_texture to gpu to sample from
-- generate triangles from vertex index and unforms only
-  - first do fixed sizes without uniforms
-  - now with uniforms

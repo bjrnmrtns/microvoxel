@@ -48,17 +48,19 @@ impl Lattice {
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Default)]
 struct LatticeHeader {
-    size_x: u32,
-    size_y: u32,
-    size_z: u32,
+    face: [glam::Vec4; 6],
+    start: glam::Vec4,
+    step: glam::Vec4,
+    size: glam::Vec4,
 }
 
 impl LatticeHeader {
-    pub fn new(size_x: u32, size_y: u32, size_z: u32) -> Self {
+    pub fn new(face: [glam::Vec4; 6], start: glam::Vec4, step: glam::Vec4, size: glam::Vec4) -> Self {
         Self {
-            size_x,
-            size_y,
-            size_z,
+            face,
+            start,
+            step,
+            size,
         }
     }
 }
@@ -89,7 +91,14 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     let size_y = 128;
     let size_z = 1024;
     let mut lattice = Lattice::new(size_x, size_y, size_z);
-    let lattice_header = LatticeHeader::new(size_x as u32, size_y as u32, size_z as u32);
+    let lattice_header_y_down = LatticeHeader::new([glam::Vec4::new(-1.0, 0.0, 1.0, 1.0), //2
+                                                    glam::Vec4::new(1.0, 0.0, 1.0, 1.0), //3
+                                                    glam::Vec4::new(-1.0, 0.0, -1.0, 1.0), //6
+                                                    glam::Vec4::new(1.0, 0.0, 1.0, 1.0), //3
+                                                    glam::Vec4::new(1.0, 0.0, -1.0, 1.0), //7
+                                                    glam::Vec4::new(-1.0, 0.0, -1.0, 1.0), //6
+                                                   ], glam::Vec4::new(0.0, 0.0, 0.0, 1.0), glam::Vec4::new(0.0, -1.0, 0.0, 1.0), glam::Vec4::new(1.0 as f32, 1.0 as f32, 1.0 as f32, 1.0));
+
     lattice.set(23, 94, 122, 4);
     let mut last_mouse_position : Option<(f32, f32)> = None;
     let mut current_mouse_position : Option<(f32, f32)> = None;
@@ -109,7 +118,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     
     let lattice_header_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("lattice header buffer"),
-        contents: bytemuck::cast_slice(&[lattice_header]),
+        contents: bytemuck::cast_slice(&[lattice_header_y_down]),
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
     });
 
@@ -251,7 +260,9 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                                 });
                             rpass.set_pipeline(&render_pipeline);
                             rpass.set_bind_group(0, &mvp_bind_group, &[]);
-                            rpass.draw(0..((lattice_header.size_x + lattice_header.size_y + lattice_header.size_z) * 6), 0..1);
+//                            rpass.draw(0..((lattice_header.size_x + lattice_header.size_y + lattice_header.size_z) * 6), 0..1);
+                            rpass.draw(0..size_y as u32 * 6, 0..1);
+
                         }
 
                         queue.submit(Some(encoder.finish()));
