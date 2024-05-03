@@ -9,10 +9,12 @@ struct LatticeHeader {
     face: array<vec4f, 6>,
     start: vec4f,
     step: vec4f,
-    size: vec4f,
 };
 
 struct LatticeHeaders {
+    size_x: u32,
+    size_y: u32,
+    size_z: u32,
     data: array<LatticeHeader>,
 };
 
@@ -37,23 +39,33 @@ fn lattice_get_index(index: u32) -> u32 {
 }
 
 fn lattice_get(x: u32, y: u32, z: u32) -> u32 {
-    var size_x : u32 = 1024u;
-    var size_y : u32 = 128u;
-    var size_z : u32 = 1024u;
+    var size_x : u32 = lattice_headers.size_x;
+    var size_y : u32 = lattice_headers.size_y;
+    var size_z : u32 = lattice_headers.size_z;
     var index = x + (z * size_x) + (y * size_x * size_z);
     return lattice_get_index(index); 
 }
 
+struct VertexOutput {
+    @builtin(position) clip_position: vec4<f32>,
+    @location(0) vert_pos: vec3<f32>,
+}
+
 @vertex
-fn vs_main(@builtin(vertex_index) in_vertex_index: u32, @builtin(instance_index) in_instance_index: u32) -> @builtin(position) vec4<f32> {
+fn vs_main(@builtin(vertex_index) in_vertex_index: u32, @builtin(instance_index) in_instance_index: u32) -> VertexOutput {
+    var out: VertexOutput;
     var face_nr : u32 = in_vertex_index / 6;
     var lattice_header = lattice_headers.data[in_instance_index];
-    var face_scaled = lattice_header.face[in_vertex_index % 6].xyz * (lattice_header.size / 2.0).xyz;
-    return mvp.projection * mvp.view * mvp.world * vec4f((face_scaled.xyz + lattice_header.start.xyz + (lattice_header.step.xyz * f32(face_nr))), 1.0);
+    var size = vec3<f32>(f32(lattice_headers.size_x), f32(lattice_headers.size_y), f32(lattice_headers.size_z));
+    var face_scaled = lattice_header.face[in_vertex_index % 6].xyz * size.xyz;
+
+    out.clip_position = mvp.projection * mvp.view * mvp.world * vec4f((face_scaled.xyz + lattice_header.start.xyz + (lattice_header.step.xyz * f32(face_nr))), 1.0);
+    out.vert_pos = out.clip_position.xyz;
+    return out;
 }
 
 @fragment
-fn fs_main() -> @location(0) vec4<f32> {
+fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     var colors : array<vec4<f32>, 5> = array<vec4<f32>, 5>(
         vec4<f32>(1.0, 0.0, 0.0, 1.0),  // Red
         vec4<f32>(0.0, 1.0, 0.0, 1.0),  // Green
@@ -61,5 +73,7 @@ fn fs_main() -> @location(0) vec4<f32> {
         vec4<f32>(1.0, 1.0, 0.0, 1.0),  // Yellow
         vec4<f32>(0.0, 1.0, 1.0, 1.0)   // Cyan
     );
-    return colors[lattice_get(23u, 94u, 122u)];
+    // I think we need to use in.vert_pos to calculate the index into lattice
+    //return colors[lattice_get(23u, 94u, 122u)];
+    return colors[lattice_get(0u, 0u, 0u)];
 }
