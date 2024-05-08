@@ -73,30 +73,99 @@ struct LatticeHeaders
     pub size_x: u32,
     pub size_y: u32,
     pub size_z: u32,
-    headers: [LatticeHeader; 2],
+    headers: [LatticeHeader; 3],
+}
+
+fn cube_vertex(index: usize) -> glam::Vec4 {
+    let cube_vertices = [ 
+        glam::Vec4::new(-0.5,-0.5, 0.5, 1.0),
+        glam::Vec4::new( 0.5,-0.5, 0.5, 1.0),
+        glam::Vec4::new(-0.5, 0.5, 0.5, 1.0),
+        glam::Vec4::new( 0.5, 0.5, 0.5, 1.0),
+        glam::Vec4::new(-0.5,-0.5,-0.5, 1.0),
+        glam::Vec4::new( 0.5,-0.5,-0.5, 1.0),
+        glam::Vec4::new(-0.5, 0.5,-0.5, 1.0),
+        glam::Vec4::new( 0.5, 0.5,-0.5, 1.0),
+    ];
+    cube_vertices[index]
+}
+
+fn face_x_min() -> [glam::Vec4; 6] {
+    [
+        cube_vertex(4),
+        cube_vertex(2),
+        cube_vertex(6),
+        cube_vertex(0),
+        cube_vertex(2),
+        cube_vertex(6),
+    ]
+}
+
+fn face_x_plus() -> [glam::Vec4; 6] {
+    [
+        cube_vertex(1),
+        cube_vertex(5),
+        cube_vertex(3),
+        cube_vertex(5),
+        cube_vertex(7),
+        cube_vertex(3),
+    ]
+}
+
+fn face_y_min() -> [glam::Vec4; 6] {
+    [
+        cube_vertex(4),
+        cube_vertex(5),
+        cube_vertex(0),
+        cube_vertex(5),
+        cube_vertex(1),
+        cube_vertex(0),
+    ]
+}
+
+fn face_y_plus() -> [glam::Vec4; 6] {
+    [
+        cube_vertex(2),
+        cube_vertex(3),
+        cube_vertex(6),
+        cube_vertex(3),
+        cube_vertex(7),
+        cube_vertex(6),
+    ]
+}
+
+fn face_z_min() -> [glam::Vec4; 6] {
+    [
+        cube_vertex(5),
+        cube_vertex(4),
+        cube_vertex(7),
+        cube_vertex(4),
+        cube_vertex(6),
+        cube_vertex(5),
+    ]
+}
+
+fn face_z_plus() -> [glam::Vec4; 6] {
+    [
+        cube_vertex(0),
+        cube_vertex(1),
+        cube_vertex(2),
+        cube_vertex(1),
+        cube_vertex(3),
+        cube_vertex(2),
+    ]
 }
 
 impl LatticeHeaders {
     pub fn new(size_x: u32, size_y: u32, size_z: u32) -> Self {
-        let start = glam::Vec4::new((size_x / 2) as f32, (size_y / 2) as f32, (size_z / 2) as f32, 0.0);
+        let start = glam::Vec4::new((size_x as f32 / 2.0), (size_y as f32 / 2.0), (size_z as f32 / 2.0), 0.0);
         Self {
             size_x,
             size_y,
             size_z,
-            headers: [LatticeHeader::new([glam::Vec4::new(-0.5, 0.5, 0.5, 1.0), //2
-                                                    glam::Vec4::new(0.5, 0.5, 0.5, 1.0), //3
-                                                    glam::Vec4::new(-0.5, 0.5, -0.5, 1.0), //6
-                                                    glam::Vec4::new(0.5, 0.5, 0.5, 1.0), //3
-                                                    glam::Vec4::new(0.5, 0.5, -0.5, 1.0), //7
-                                                    glam::Vec4::new(-0.5, 0.5, -0.5, 1.0), //6
-                                                   ], start, glam::Vec4::new(0.0, -1.0, 0.0, 0.0)),
-                     LatticeHeader::new([glam::Vec4::new(-0.5, -0.5, 0.5, 1.0), //0
-                                               glam::Vec4::new(0.5, -0.5, 0.5, 1.0), //1
-                                               glam::Vec4::new(-0.5, 0.5, 0.5, 1.0), //2
-                                               glam::Vec4::new(0.5, -0.5, 0.5, 1.0), //1
-                                               glam::Vec4::new(0.5, 0.5, 0.5, 1.0), //3
-                                               glam::Vec4::new(-0.5, 0.5, 0.5, 1.0), //2
-                                              ], start, glam::Vec4::new(0.0, 0.0, -1.0, 0.0))
+            headers: [LatticeHeader::new(face_y_plus(), start, glam::Vec4::new(0.0, -1.0, 0.0, 0.0)),
+                      LatticeHeader::new(face_z_plus(), start, glam::Vec4::new(0.0, 0.0, -1.0, 0.0)),
+                      LatticeHeader::new(face_x_plus(), start, glam::Vec4::new(-1.0, 0.0, 0.0, 0.0))
             ],
         }
     }
@@ -138,7 +207,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     lattice.set(1, 0, 0, 4);
     lattice.set(1, 0, 1, 0);
     lattice.set(1, 1, 0, 1);
-    lattice.set(1, 1, 0, 2);
+    lattice.set(1, 1, 1, 2);
     let mut last_mouse_position : Option<(f32, f32)> = None;
     let mut current_mouse_position : Option<(f32, f32)> = None;
     mvp_uniform.projection = glam::Mat4::perspective_rh(45.0, window.inner_size().width as f32 / window.inner_size().height as f32, 1.0, 1000.0 );
@@ -301,6 +370,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                             rpass.set_bind_group(0, &mvp_bind_group, &[]);
                             rpass.draw(0..lattice_headers.size_y * 6, 0..1);
                             rpass.draw(0..lattice_headers.size_z * 6, 1..2);
+                            rpass.draw(0..lattice_headers.size_x * 6, 2..3);
 
                         }
 

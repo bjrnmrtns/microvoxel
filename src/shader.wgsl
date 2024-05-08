@@ -59,21 +59,27 @@ fn vs_main(@builtin(vertex_index) in_vertex_index: u32, @builtin(instance_index)
     var size = vec3<f32>(f32(lattice_headers.size_x), f32(lattice_headers.size_y), f32(lattice_headers.size_z));
     var face_scaled = lattice_header.face[in_vertex_index % 6].xyz * size.xyz;
 
-    out.clip_position = mvp.projection * mvp.view * mvp.world * vec4f((face_scaled.xyz + lattice_header.start.xyz + (lattice_header.step.xyz * f32(face_nr))), 1.0);
-    out.vert_pos = out.clip_position.xyz;
+    var world_pos = face_scaled.xyz + lattice_header.start.xyz + (lattice_header.step.xyz * f32(face_nr));
+    out.clip_position = mvp.projection * mvp.view * mvp.world * vec4f(world_pos, 1.0);
+    out.vert_pos = world_pos;
     return out;
 }
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    var colors : array<vec4<f32>, 5> = array<vec4<f32>, 5>(
+    var colors : array<vec4<f32>, 8> = array<vec4<f32>, 8>(
         vec4<f32>(1.0, 0.0, 0.0, 1.0),  // Red
         vec4<f32>(0.0, 1.0, 0.0, 1.0),  // Green
         vec4<f32>(0.0, 0.0, 1.0, 1.0),  // Blue
         vec4<f32>(1.0, 1.0, 0.0, 1.0),  // Yellow
+        vec4<f32>(1.0, 0.0, 0.0, 1.0),  // Cyan
+        vec4<f32>(0.0, 0.0, 1.0, 1.0),  // Cyan
+        vec4<f32>(0.0, 1.0, 0.0, 1.0),  // Cyan
         vec4<f32>(0.0, 1.0, 1.0, 1.0)   // Cyan
     );
+    var lattice_index = in.vert_pos + vec3<f32>(1.5, 1.5, 1.5);
     // I think we need to use in.vert_pos to calculate the index into lattice
     //return colors[lattice_get(23u, 94u, 122u)];
-    return colors[lattice_get(0u, 0u, 0u)];
+    return vec4<f32>(in.vert_pos, 1.0);
+//    return colors[lattice_get(u32(lattice_index.x), u32(lattice_index.y), u32(lattice_index.z))];
 }

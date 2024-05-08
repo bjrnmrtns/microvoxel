@@ -37,10 +37,12 @@ x add 10x10x2 chunks
 + generate triangles from vertex index and unforms only
   + first do fixed sizes without uniforms
   + now with uniforms
+
+2024-05-08
 - investigate a sparse 3d texture (maybe octree like)
 - we have 6 faces, we only need to render 3 sides add true culling in software
 - start implementing what we have currently in cpp in rust/wgpu
 - implement deferred renderer
 - use instance buffer to have different header data for x y z and -x -y -z
   + add instanced rendering for two
-  
+- fix lattice color lookup  
