@@ -26,13 +26,14 @@ struct Lattice {
 impl Lattice {
     pub fn new(size_x: usize, size_y: usize, size_z: usize) -> Self {
         Self {
-            data: vec!(0; size_x * size_y * size_z / 4),
+            data: vec!(0; size_x * size_y * size_z),
             size_x,
             size_y,
             size_z,
         }
     }
-    pub fn set_index(&mut self, index: usize, value: u8) {
+/* uncomment code when we want to use 8 bits index into palette
+ * pub fn set_index(&mut self, index: usize, value: u8) {
         let array_index = index / 4;
         let u32_index = index % 4;
         let shift = 8 * (3 - u32_index);
@@ -42,6 +43,11 @@ impl Lattice {
     pub fn set(&mut self, x: usize, y: usize, z: usize, value: u8) {
         let index = x + (z * self.size_x) + (y * self.size_x * self.size_z);
         self.set_index(index, value); 
+    }
+    */
+    pub fn set(&mut self, x: usize, y: usize, z: usize, value: u32) {
+        let index = x + (z * self.size_x) + (y * self.size_x * self.size_z);
+        self.data[index] = value; 
     }
 }
 
@@ -200,14 +206,14 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     let mut lattice = Lattice::new(size_x as usize, size_y as usize, size_z as usize);
     let lattice_headers = LatticeHeaders::new(size_x, size_y, size_z);
 
-    lattice.set(0, 0, 0, 0);
-    lattice.set(0, 0, 1, 1);
-    lattice.set(0, 1, 0, 2);
-    lattice.set(0, 1, 1, 3);
-    lattice.set(1, 0, 0, 4);
-    lattice.set(1, 0, 1, 0);
-    lattice.set(1, 1, 0, 1);
-    lattice.set(1, 1, 1, 2);
+    lattice.set(0, 0, 0, 0x00FFFFFF);
+    lattice.set(0, 0, 1, 0x00FFFF00);
+    lattice.set(0, 1, 0, 0x00FF00FF);
+    lattice.set(0, 1, 1, 0x00FF0000);
+    lattice.set(1, 0, 0, 0x0000FFFF);
+    lattice.set(1, 0, 1, 0x0000FF00);
+    lattice.set(1, 1, 0, 0x000000FF);
+    lattice.set(1, 1, 1, 0x00000000);
     let mut last_mouse_position : Option<(f32, f32)> = None;
     let mut current_mouse_position : Option<(f32, f32)> = None;
     mvp_uniform.projection = glam::Mat4::perspective_rh(45.0, window.inner_size().width as f32 / window.inner_size().height as f32, 1.0, 1000.0 );

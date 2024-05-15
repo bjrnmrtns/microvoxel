@@ -32,6 +32,7 @@ var<storage, read> lattice : Lattice;
 @group(0) @binding(2)
 var<storage, read> lattice_headers : LatticeHeaders;
 
+/* uncomment when using 8 bit with palette
 fn lattice_get_index(index: u32) -> u32 {
     var array_index = index / 4;
     var u32_index = index % 4;
@@ -44,6 +45,23 @@ fn lattice_get(x: u32, y: u32, z: u32) -> u32 {
     var size_z : u32 = lattice_headers.size_z;
     var index = x + (z * size_x) + (y * size_x * size_z);
     return lattice_get_index(index); 
+}
+*/
+
+fn lattice_get(x: u32, y: u32, z: u32) -> u32 {
+    var size_x : u32 = lattice_headers.size_x;
+    var size_y : u32 = lattice_headers.size_y;
+    var size_z : u32 = lattice_headers.size_z;
+    var index = x + (z * size_x) + (y * size_x * size_z);
+    return lattice.data[index]; 
+}
+
+fn unpack_rgba(color: u32) -> vec4<f32> {
+    let r = f32((color & 0x000000FFu)) / 255.0;
+    let g = f32((color & 0x0000FF00u) >> 8) / 255.0;
+    let b = f32((color & 0x00FF0000u) >> 16) / 255.0;
+    let a = f32((color & 0xFF000000u) >> 24) / 255.0;
+    return vec4<f32>(r, g, b, a);
 }
 
 struct VertexOutput {
@@ -67,19 +85,9 @@ fn vs_main(@builtin(vertex_index) in_vertex_index: u32, @builtin(instance_index)
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    var colors : array<vec4<f32>, 8> = array<vec4<f32>, 8>(
-        vec4<f32>(1.0, 0.0, 0.0, 1.0),  // Red
-        vec4<f32>(0.0, 1.0, 0.0, 1.0),  // Green
-        vec4<f32>(0.0, 0.0, 1.0, 1.0),  // Blue
-        vec4<f32>(1.0, 1.0, 0.0, 1.0),  // Yellow
-        vec4<f32>(1.0, 0.0, 0.0, 1.0),  // Cyan
-        vec4<f32>(0.0, 0.0, 1.0, 1.0),  // Cyan
-        vec4<f32>(0.0, 1.0, 0.0, 1.0),  // Cyan
-        vec4<f32>(0.0, 1.0, 1.0, 1.0)   // Cyan
-    );
     var lattice_index = in.vert_pos + vec3<f32>(1.5, 1.5, 1.5);
     // I think we need to use in.vert_pos to calculate the index into lattice
     //return colors[lattice_get(23u, 94u, 122u)];
-    return vec4<f32>(in.vert_pos, 1.0);
-//    return colors[lattice_get(u32(lattice_index.x), u32(lattice_index.y), u32(lattice_index.z))];
+//    return vec4<f32>(in.vert_pos, 1.0);
+    return unpack_rgba(lattice_get(0u, 0u, 0u));
 }
