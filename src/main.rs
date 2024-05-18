@@ -53,50 +53,28 @@ impl Lattice {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Default)]
-struct LatticeHeader {
-    face: [glam::Vec4; 6],
-    start: glam::Vec4,
-    step: glam::Vec4,
-}
-
-impl LatticeHeader {
-    pub fn new(face: [glam::Vec4; 6], start: glam::Vec4, step: glam::Vec4) -> Self {
-        Self {
-            face,
-            start,
-            step,
-        }
-    }
-}
-
-unsafe impl bytemuck::Pod for LatticeHeader {}
-unsafe impl bytemuck::Zeroable for LatticeHeader {}
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone, Default)]
 struct LatticeHeaders
 {
     pub size_x: u32,
     pub size_y: u32,
     pub size_z: u32,
-    headers: [LatticeHeader; 2],
 }
 
-fn cube_vertex(index: usize) -> glam::Vec4 {
+fn cube_vertex(index: usize) -> [f32; 3] {
     let cube_vertices = [ 
-        glam::Vec4::new(-0.5,-0.5, 0.5, 1.0),
-        glam::Vec4::new( 0.5,-0.5, 0.5, 1.0),
-        glam::Vec4::new(-0.5, 0.5, 0.5, 1.0),
-        glam::Vec4::new( 0.5, 0.5, 0.5, 1.0),
-        glam::Vec4::new(-0.5,-0.5,-0.5, 1.0),
-        glam::Vec4::new( 0.5,-0.5,-0.5, 1.0),
-        glam::Vec4::new(-0.5, 0.5,-0.5, 1.0),
-        glam::Vec4::new( 0.5, 0.5,-0.5, 1.0),
+        [-0.5,-0.5, 0.5],
+        [ 0.5,-0.5, 0.5],
+        [-0.5, 0.5, 0.5],
+        [ 0.5, 0.5, 0.5],
+        [-0.5,-0.5,-0.5],
+        [ 0.5,-0.5,-0.5],
+        [-0.5, 0.5,-0.5],
+        [ 0.5, 0.5,-0.5],
     ];
     cube_vertices[index]
 }
         
-fn face_x_min() -> [glam::Vec4; 6] {
+fn face_x_min() -> [[f32; 3]; 6] {
     [
         cube_vertex(4),
         cube_vertex(2),
@@ -107,7 +85,7 @@ fn face_x_min() -> [glam::Vec4; 6] {
     ]
 }
 
-fn face_x_plus() -> [glam::Vec4; 6] {
+fn face_x_plus() -> [[f32; 3]; 6] {
     [
         cube_vertex(1),
         cube_vertex(5),
@@ -118,7 +96,7 @@ fn face_x_plus() -> [glam::Vec4; 6] {
     ]
 }
 
-fn face_y_min() -> [glam::Vec4; 6] {
+fn face_y_min() -> [[f32; 3]; 6] {
     [
         cube_vertex(4),
         cube_vertex(5),
@@ -129,7 +107,7 @@ fn face_y_min() -> [glam::Vec4; 6] {
     ]
 }
 
-fn face_y_plus() -> [glam::Vec4; 6] {
+fn face_y_plus() -> [[f32; 3]; 6] {
     [
         cube_vertex(2),
         cube_vertex(3),
@@ -140,7 +118,7 @@ fn face_y_plus() -> [glam::Vec4; 6] {
     ]
 }
 
-fn face_z_min() -> [glam::Vec4; 6] {
+fn face_z_min() -> [[f32; 3]; 6] {
     [
         cube_vertex(5),
         cube_vertex(4),
@@ -151,7 +129,7 @@ fn face_z_min() -> [glam::Vec4; 6] {
     ]
 }
 
-fn face_z_plus() -> [glam::Vec4; 6] {
+fn face_z_plus() -> [[f32; 3]; 6] {
     [
         cube_vertex(0),
         cube_vertex(1),
@@ -164,15 +142,10 @@ fn face_z_plus() -> [glam::Vec4; 6] {
 
 impl LatticeHeaders {
     pub fn new(size_x: u32, size_y: u32, size_z: u32) -> Self {
-        let start = glam::Vec4::new(((size_x - 1) as f32 / 2.0), ((size_y - 1) as f32 / 2.0), ((size_z - 1) as f32 / 2.0), 0.0);
         Self {
             size_x,
             size_y,
             size_z,
-            headers: [LatticeHeader::new(face_y_plus(), glam::Vec4::new(0.0, start.y, 0.0, 0.0), glam::Vec4::new(0.0, -1.0, 0.0, 0.0)),
-                      LatticeHeader::new(face_z_plus(), glam::Vec4::new(0.0, 0.0, start.z, 0.0), glam::Vec4::new(0.0, 0.0, -1.0, 0.0)),
-//                      LatticeHeader::new(face_x_plus(), glam::Vec4::new(start.x, 0.0, 0.0, 0.0), glam::Vec4::new(-1.0, 0.0, 0.0, 0.0))
-            ],
         }
     }
 }
@@ -180,23 +153,19 @@ impl LatticeHeaders {
 unsafe impl bytemuck::Pod for LatticeHeaders {}
 unsafe impl bytemuck::Zeroable for LatticeHeaders {}
 
-// Vertex data
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 struct Vertex {
     position: [f32; 3],
 }
 
-const VERTICES: &[Vertex] = &[
-    Vertex { position: [-0.5, 0.5, 0.5] },
-    Vertex { position: [ 0.5, 0.5, 0.5] },
-    Vertex { position: [-0.5, 0.5,-0.5] },
-    Vertex { position: [ 0.5, 0.5, 0.5] },
-    Vertex { position: [ 0.5, 0.5,-0.5] },
-    Vertex { position: [-0.5, 0.5,-0.5] },
-];
 
 async fn run(event_loop: EventLoop<()>, window: Window) {
+    let mut vertices : Vec<[f32; 3]> = Vec::new();
+    face_y_plus().map(|p| vertices.push(p));
+
+//    vertices.push(&face_x_plus());
+
 
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::GL,
@@ -357,7 +326,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
 
     let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Vertex Buffer"),
-        contents: bytemuck::cast_slice(VERTICES),
+        contents: bytemuck::cast_slice(&vertices),
         usage: wgpu::BufferUsages::VERTEX,
     });
 

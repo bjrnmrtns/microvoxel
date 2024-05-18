@@ -5,17 +5,10 @@ struct mvp_uniform {
     world: mat4x4<f32>,
 };
 
-struct LatticeHeader {
-    face: array<vec4f, 6>,
-    start: vec4f,
-    step: vec4f,
-};
-
 struct LatticeHeaders {
     size_x: u32,
     size_y: u32,
     size_z: u32,
-    data: array<LatticeHeader>,
 };
 
 // lattice used in fragment shader
