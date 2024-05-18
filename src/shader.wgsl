@@ -64,30 +64,26 @@ fn unpack_rgba(color: u32) -> vec4<f32> {
     return vec4<f32>(r, g, b, a);
 }
 
+struct VertexInput {
+    @location(0) position: vec3<f32>,
+}
+
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
     @location(0) vert_pos: vec3<f32>,
 }
 
 @vertex
-fn vs_main(@builtin(vertex_index) in_vertex_index: u32, @builtin(instance_index) in_instance_index: u32) -> VertexOutput {
+fn vs_main(input: VertexInput, @builtin(vertex_index) in_vertex_index: u32, @builtin(instance_index) in_instance_index: u32) -> VertexOutput {
     var out: VertexOutput;
-    var face_nr : u32 = in_vertex_index / 6;
-    var lattice_header = lattice_headers.data[in_instance_index];
-    var size = vec3<f32>(f32(lattice_headers.size_x), f32(lattice_headers.size_y), f32(lattice_headers.size_z));
-    var face_scaled = lattice_header.face[in_vertex_index % 6].xyz * size.xyz;
-
-    var world_pos = face_scaled.xyz + lattice_header.start.xyz + (lattice_header.step.xyz * f32(face_nr));
-    out.clip_position = mvp.projection * mvp.view * mvp.world * vec4f(world_pos, 1.0);
-    out.vert_pos = world_pos;
+    out.clip_position = mvp.projection * mvp.view * mvp.world * vec4f(input.position, 1.0);
+    out.vert_pos = input.position;
     return out;
 }
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    var lattice_index = in.vert_pos + vec3<f32>(1.5, 1.5, 1.5);
-    // I think we need to use in.vert_pos to calculate the index into lattice
-    //return colors[lattice_get(23u, 94u, 122u)];
 //    return vec4<f32>(in.vert_pos, 1.0);
-    return unpack_rgba(lattice_get(0u, 0u, 0u));
+//    return unpack_rgba(lattice_get(0u, 0u, 0u));
+    return vec4<f32>(in.vert_pos, 1.0);
 }

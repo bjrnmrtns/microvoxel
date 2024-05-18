@@ -79,7 +79,7 @@ struct LatticeHeaders
     pub size_x: u32,
     pub size_y: u32,
     pub size_z: u32,
-    headers: [LatticeHeader; 3],
+    headers: [LatticeHeader; 2],
 }
 
 fn cube_vertex(index: usize) -> glam::Vec4 {
@@ -95,7 +95,7 @@ fn cube_vertex(index: usize) -> glam::Vec4 {
     ];
     cube_vertices[index]
 }
-
+        
 fn face_x_min() -> [glam::Vec4; 6] {
     [
         cube_vertex(4),
@@ -164,14 +164,14 @@ fn face_z_plus() -> [glam::Vec4; 6] {
 
 impl LatticeHeaders {
     pub fn new(size_x: u32, size_y: u32, size_z: u32) -> Self {
-        let start = glam::Vec4::new((size_x as f32 / 2.0), (size_y as f32 / 2.0), (size_z as f32 / 2.0), 0.0);
+        let start = glam::Vec4::new(((size_x - 1) as f32 / 2.0), ((size_y - 1) as f32 / 2.0), ((size_z - 1) as f32 / 2.0), 0.0);
         Self {
             size_x,
             size_y,
             size_z,
-            headers: [LatticeHeader::new(face_y_plus(), start, glam::Vec4::new(0.0, -1.0, 0.0, 0.0)),
-                      LatticeHeader::new(face_z_plus(), start, glam::Vec4::new(0.0, 0.0, -1.0, 0.0)),
-                      LatticeHeader::new(face_x_plus(), start, glam::Vec4::new(-1.0, 0.0, 0.0, 0.0))
+            headers: [LatticeHeader::new(face_y_plus(), glam::Vec4::new(0.0, start.y, 0.0, 0.0), glam::Vec4::new(0.0, -1.0, 0.0, 0.0)),
+                      LatticeHeader::new(face_z_plus(), glam::Vec4::new(0.0, 0.0, start.z, 0.0), glam::Vec4::new(0.0, 0.0, -1.0, 0.0)),
+//                      LatticeHeader::new(face_x_plus(), glam::Vec4::new(start.x, 0.0, 0.0, 0.0), glam::Vec4::new(-1.0, 0.0, 0.0, 0.0))
             ],
         }
     }
@@ -180,11 +180,26 @@ impl LatticeHeaders {
 unsafe impl bytemuck::Pod for LatticeHeaders {}
 unsafe impl bytemuck::Zeroable for LatticeHeaders {}
 
+// Vertex data
+#[repr(C)]
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+struct Vertex {
+    position: [f32; 3],
+}
+
+const VERTICES: &[Vertex] = &[
+    Vertex { position: [-0.5, 0.5, 0.5] },
+    Vertex { position: [ 0.5, 0.5, 0.5] },
+    Vertex { position: [-0.5, 0.5,-0.5] },
+    Vertex { position: [ 0.5, 0.5, 0.5] },
+    Vertex { position: [ 0.5, 0.5,-0.5] },
+    Vertex { position: [-0.5, 0.5,-0.5] },
+];
 
 async fn run(event_loop: EventLoop<()>, window: Window) {
 
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-        backends: wgpu::Backends::PRIMARY,
+        backends: wgpu::Backends::GL,
         ..Default::default()
     });
     let surface = instance.create_surface(&window).unwrap();
@@ -207,13 +222,14 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     let lattice_headers = LatticeHeaders::new(size_x, size_y, size_z);
 
     lattice.set(0, 0, 0, 0x00FFFFFF);
-    lattice.set(0, 0, 1, 0x00FFFF00);
+/*    lattice.set(0, 0, 1, 0x00FFFF00);
     lattice.set(0, 1, 0, 0x00FF00FF);
     lattice.set(0, 1, 1, 0x00FF0000);
     lattice.set(1, 0, 0, 0x0000FFFF);
     lattice.set(1, 0, 1, 0x0000FF00);
     lattice.set(1, 1, 0, 0x000000FF);
     lattice.set(1, 1, 1, 0x00000000);
+    */
     let mut last_mouse_position : Option<(f32, f32)> = None;
     let mut current_mouse_position : Option<(f32, f32)> = None;
     mvp_uniform.projection = glam::Mat4::perspective_rh(45.0, window.inner_size().width as f32 / window.inner_size().height as f32, 1.0, 1000.0 );
@@ -299,7 +315,17 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
         vertex: wgpu::VertexState {
             module: &shader,
             entry_point: "vs_main",
-            buffers: &[],
+            buffers: &[wgpu::VertexBufferLayout {
+                array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
+                step_mode: wgpu::VertexStepMode::Vertex,
+                attributes: &[
+                    wgpu::VertexAttribute {
+                        offset: 0,
+                        shader_location: 0,
+                        format: wgpu::VertexFormat::Float32x3,
+                    },
+                ],
+            }],
             compilation_options: wgpu::PipelineCompilationOptions::default(),
         },
         fragment: Some(wgpu::FragmentState {
@@ -328,6 +354,12 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     let window = &window;
     mvp_uniform.projection = glam::Mat4::perspective_rh(45.0, window.inner_size().width as f32 / window.inner_size().height as f32, 1.0, 1000.0 );
     let mut camera = camera::Camera::new();
+
+    let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Vertex Buffer"),
+        contents: bytemuck::cast_slice(VERTICES),
+        usage: wgpu::BufferUsages::VERTEX,
+    });
 
     event_loop
         .run(move |event, target| {
@@ -382,10 +414,8 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                                 });
                             rpass.set_pipeline(&render_pipeline);
                             rpass.set_bind_group(0, &mvp_bind_group, &[]);
-                            rpass.draw(0..lattice_headers.size_y * 6, 0..1);
-                            rpass.draw(0..lattice_headers.size_z * 6, 1..2);
-                            rpass.draw(0..lattice_headers.size_x * 6, 2..3);
-
+                            rpass.set_vertex_buffer(0, vertex_buffer.slice(..));
+                            rpass.draw(0..6, 0..1);
                         }
 
                         queue.submit(Some(encoder.finish()));

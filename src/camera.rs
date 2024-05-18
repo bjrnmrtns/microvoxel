@@ -10,7 +10,7 @@ pub struct Camera {
 impl Camera {
     pub fn new() -> Self {
         Self {
-            position: glam::Vec3::new(0.0, 2.0, 0.0),
+            position: glam::Vec3::new(0.0, 3.0, 0.0),
             direction: glam::Vec3::new(0.0, -1.0, 0.0),
             up: glam::Vec3::new(0.0, 0.0, 1.0),
         }
