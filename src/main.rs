@@ -60,7 +60,7 @@ struct LatticeHeaders
     pub size_z: u32,
 }
 
-fn cube_vertex(index: usize, size: &[usize; 3]) -> [f32; 3] {
+fn cube_vertex(index: usize, size: &[usize; 3], offset: &[f32; 3]) -> [f32; 3] {
     let cube_vertices = [ 
         [-1,-1, 1],
         [ 1,-1, 1],
@@ -71,78 +71,84 @@ fn cube_vertex(index: usize, size: &[usize; 3]) -> [f32; 3] {
         [-1, 1,-1],
         [ 1, 1,-1],
     ];
-    [cube_vertices[index][0] as f32 * size[0] as f32 / 2.0, cube_vertices[index][1] as f32 * size[1] as f32 / 2.0, cube_vertices[index][2] as f32 * size[2] as f32 / 2.0]
+    [cube_vertices[index][0] as f32 * size[0] as f32 / 2.0 + offset[0], cube_vertices[index][1] as f32 * size[1] as f32 / 2.0 + offset[1], cube_vertices[index][2] as f32 * size[2] as f32 / 2.0 + offset[2]]
 }
         
-fn face_x_min(size: &[usize; 3]) -> [[f32; 3]; 6] {
+fn face_x_min(size: &[usize; 3], offset: &[f32; 3]) -> [[f32; 3]; 6] {
     let size = [0, size[1], size[2]];
+    let offset = [offset[0], offset[1], offset[2]];
     [
-        cube_vertex(4, &size),
-        cube_vertex(2, &size),
-        cube_vertex(6, &size),
-        cube_vertex(0, &size),
-        cube_vertex(2, &size),
-        cube_vertex(6, &size),
+        cube_vertex(4, &size, &offset),
+        cube_vertex(2, &size, &offset),
+        cube_vertex(6, &size, &offset),
+        cube_vertex(0, &size, &offset),
+        cube_vertex(2, &size, &offset),
+        cube_vertex(6, &size, &offset),
     ]
 }
 
-fn face_x_plus(size: &[usize; 3]) -> [[f32; 3]; 6] {
+fn face_x_plus(size: &[usize; 3], offset: &[f32; 3]) -> [[f32; 3]; 6] {
     let size = [0, size[1], size[2]];
+    let offset = [offset[0], offset[1], offset[2]];
     [
-        cube_vertex(1, &size),
-        cube_vertex(5, &size),
-        cube_vertex(3, &size),
-        cube_vertex(5, &size),
-        cube_vertex(7, &size),
-        cube_vertex(3, &size),
+        cube_vertex(1, &size, &offset),
+        cube_vertex(5, &size, &offset),
+        cube_vertex(3, &size, &offset),
+        cube_vertex(5, &size, &offset),
+        cube_vertex(7, &size, &offset),
+        cube_vertex(3, &size, &offset),
     ]
 }
 
-fn face_y_min(size: &[usize; 3]) -> [[f32; 3]; 6] {
+fn face_y_min(size: &[usize; 3], offset: &[f32; 3]) -> [[f32; 3]; 6] {
     let size = [size[0], 0, size[2]];
+    let offset = [offset[0], offset[1], offset[2]];
     [
-        cube_vertex(4, &size),
-        cube_vertex(5, &size),
-        cube_vertex(0, &size),
-        cube_vertex(5, &size),
-        cube_vertex(1, &size),
-        cube_vertex(0, &size),
+        cube_vertex(4, &size, &offset),
+        cube_vertex(5, &size, &offset),
+        cube_vertex(0, &size, &offset),
+        cube_vertex(5, &size, &offset),
+        cube_vertex(1, &size, &offset),
+        cube_vertex(0, &size, &offset),
     ]
 }
 
-fn face_y_plus(size: &[usize; 3]) -> [[f32; 3]; 6] {
+fn face_y_plus(size: &[usize; 3], offset: &[f32; 3]) -> [[f32; 3]; 6] {
     let size = [size[0], 0, size[2]];
+    let offset = [offset[0], offset[1], offset[2]];
     [
-        cube_vertex(2, &size),
-        cube_vertex(3, &size),
-        cube_vertex(6, &size),
-        cube_vertex(3, &size),
-        cube_vertex(7, &size),
-        cube_vertex(6, &size),
+        cube_vertex(2, &size, &offset),
+        cube_vertex(3, &size, &offset),
+        cube_vertex(6, &size, &offset),
+        cube_vertex(3, &size, &offset),
+        cube_vertex(7, &size, &offset),
+        cube_vertex(6, &size, &offset),
     ]
 }
 
-fn face_z_min(size: &[usize; 3]) -> [[f32; 3]; 6] {
+fn face_z_min(size: &[usize; 3], offset: &[f32; 3]) -> [[f32; 3]; 6] {
     let size = [size[0], size[1], 0];
+    let offset = [offset[0], offset[1], offset[2]];
     [
-        cube_vertex(5, &size),
-        cube_vertex(4, &size),
-        cube_vertex(7, &size),
-        cube_vertex(4, &size),
-        cube_vertex(6, &size),
-        cube_vertex(5, &size),
+        cube_vertex(5, &size, &offset),
+        cube_vertex(4, &size, &offset),
+        cube_vertex(7, &size, &offset),
+        cube_vertex(4, &size, &offset),
+        cube_vertex(6, &size, &offset),
+        cube_vertex(5, &size, &offset),
     ]
 }
 
-fn face_z_plus(size: &[usize; 3]) -> [[f32; 3]; 6] {
+fn face_z_plus(size: &[usize; 3], offset: &[f32; 3]) -> [[f32; 3]; 6] {
     let size = [size[0], size[1], 0];
+    let offset = [offset[0], offset[1], offset[2]];
     [
-        cube_vertex(0, &size),
-        cube_vertex(1, &size),
-        cube_vertex(2, &size),
-        cube_vertex(1, &size),
-        cube_vertex(3, &size),
-        cube_vertex(2, &size),
+        cube_vertex(0, &size, &offset),
+        cube_vertex(1, &size, &offset),
+        cube_vertex(2, &size, &offset),
+        cube_vertex(1, &size, &offset),
+        cube_vertex(3, &size, &offset),
+        cube_vertex(2, &size, &offset),
     ]
 }
 
@@ -188,7 +194,9 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     let size_y = 3;//128;
     let size_z = 3;//1024;
     let mut vertices : Vec<[f32; 3]> = Vec::new();
-    face_y_plus(&[size_x, size_y, size_z]).map(|p| vertices.push(p));
+    face_y_plus(&[size_x, size_y, size_z], &[0.0, 0.0, 0.0]).map(|p| vertices.push(p));
+    face_x_plus(&[size_x, size_y, size_z], &[0.0, 0.0, 0.0]).map(|p| vertices.push(p));
+    face_z_plus(&[size_x, size_y, size_z], &[0.0, 0.0, 0.0]).map(|p| vertices.push(p));
 
     let mut lattice = Lattice::new(size_x, size_y, size_z);
     let lattice_headers = LatticeHeaders::new(size_x as u32, size_y as u32, size_z as u32);
@@ -402,7 +410,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                             rpass.set_pipeline(&render_pipeline);
                             rpass.set_bind_group(0, &mvp_bind_group, &[]);
                             rpass.set_vertex_buffer(0, vertex_buffer.slice(..));
-                            rpass.draw(0..6, 0..1);
+                            rpass.draw(0..18, 0..1);
                         }
 
                         queue.submit(Some(encoder.finish()));
