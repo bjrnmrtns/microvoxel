@@ -60,83 +60,89 @@ struct LatticeHeaders
     pub size_z: u32,
 }
 
-fn cube_vertex(index: usize) -> [f32; 3] {
+fn cube_vertex(index: usize, size: &[usize; 3]) -> [f32; 3] {
     let cube_vertices = [ 
-        [-0.5,-0.5, 0.5],
-        [ 0.5,-0.5, 0.5],
-        [-0.5, 0.5, 0.5],
-        [ 0.5, 0.5, 0.5],
-        [-0.5,-0.5,-0.5],
-        [ 0.5,-0.5,-0.5],
-        [-0.5, 0.5,-0.5],
-        [ 0.5, 0.5,-0.5],
+        [-1,-1, 1],
+        [ 1,-1, 1],
+        [-1, 1, 1],
+        [ 1, 1, 1],
+        [-1,-1,-1],
+        [ 1,-1,-1],
+        [-1, 1,-1],
+        [ 1, 1,-1],
     ];
-    cube_vertices[index]
+    [cube_vertices[index][0] as f32 * size[0] as f32 / 2.0, cube_vertices[index][1] as f32 * size[1] as f32 / 2.0, cube_vertices[index][2] as f32 * size[2] as f32 / 2.0]
 }
         
-fn face_x_min() -> [[f32; 3]; 6] {
+fn face_x_min(size: &[usize; 3]) -> [[f32; 3]; 6] {
+    let size = [0, size[1], size[2]];
     [
-        cube_vertex(4),
-        cube_vertex(2),
-        cube_vertex(6),
-        cube_vertex(0),
-        cube_vertex(2),
-        cube_vertex(6),
+        cube_vertex(4, &size),
+        cube_vertex(2, &size),
+        cube_vertex(6, &size),
+        cube_vertex(0, &size),
+        cube_vertex(2, &size),
+        cube_vertex(6, &size),
     ]
 }
 
-fn face_x_plus() -> [[f32; 3]; 6] {
+fn face_x_plus(size: &[usize; 3]) -> [[f32; 3]; 6] {
+    let size = [0, size[1], size[2]];
     [
-        cube_vertex(1),
-        cube_vertex(5),
-        cube_vertex(3),
-        cube_vertex(5),
-        cube_vertex(7),
-        cube_vertex(3),
+        cube_vertex(1, &size),
+        cube_vertex(5, &size),
+        cube_vertex(3, &size),
+        cube_vertex(5, &size),
+        cube_vertex(7, &size),
+        cube_vertex(3, &size),
     ]
 }
 
-fn face_y_min() -> [[f32; 3]; 6] {
+fn face_y_min(size: &[usize; 3]) -> [[f32; 3]; 6] {
+    let size = [size[0], 0, size[2]];
     [
-        cube_vertex(4),
-        cube_vertex(5),
-        cube_vertex(0),
-        cube_vertex(5),
-        cube_vertex(1),
-        cube_vertex(0),
+        cube_vertex(4, &size),
+        cube_vertex(5, &size),
+        cube_vertex(0, &size),
+        cube_vertex(5, &size),
+        cube_vertex(1, &size),
+        cube_vertex(0, &size),
     ]
 }
 
-fn face_y_plus() -> [[f32; 3]; 6] {
+fn face_y_plus(size: &[usize; 3]) -> [[f32; 3]; 6] {
+    let size = [size[0], 0, size[2]];
     [
-        cube_vertex(2),
-        cube_vertex(3),
-        cube_vertex(6),
-        cube_vertex(3),
-        cube_vertex(7),
-        cube_vertex(6),
+        cube_vertex(2, &size),
+        cube_vertex(3, &size),
+        cube_vertex(6, &size),
+        cube_vertex(3, &size),
+        cube_vertex(7, &size),
+        cube_vertex(6, &size),
     ]
 }
 
-fn face_z_min() -> [[f32; 3]; 6] {
+fn face_z_min(size: &[usize; 3]) -> [[f32; 3]; 6] {
+    let size = [size[0], size[1], 0];
     [
-        cube_vertex(5),
-        cube_vertex(4),
-        cube_vertex(7),
-        cube_vertex(4),
-        cube_vertex(6),
-        cube_vertex(5),
+        cube_vertex(5, &size),
+        cube_vertex(4, &size),
+        cube_vertex(7, &size),
+        cube_vertex(4, &size),
+        cube_vertex(6, &size),
+        cube_vertex(5, &size),
     ]
 }
 
-fn face_z_plus() -> [[f32; 3]; 6] {
+fn face_z_plus(size: &[usize; 3]) -> [[f32; 3]; 6] {
+    let size = [size[0], size[1], 0];
     [
-        cube_vertex(0),
-        cube_vertex(1),
-        cube_vertex(2),
-        cube_vertex(1),
-        cube_vertex(3),
-        cube_vertex(2),
+        cube_vertex(0, &size),
+        cube_vertex(1, &size),
+        cube_vertex(2, &size),
+        cube_vertex(1, &size),
+        cube_vertex(3, &size),
+        cube_vertex(2, &size),
     ]
 }
 
@@ -161,12 +167,6 @@ struct Vertex {
 
 
 async fn run(event_loop: EventLoop<()>, window: Window) {
-    let mut vertices : Vec<[f32; 3]> = Vec::new();
-    face_y_plus().map(|p| vertices.push(p));
-
-//    vertices.push(&face_x_plus());
-
-
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::GL,
         ..Default::default()
@@ -184,21 +184,39 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
 
     let mut mvp_uniform = Uniform::default();
 
-    let size_x : u32 = 2;//1024;
-    let size_y : u32 = 2;//128;
-    let size_z : u32 = 2;//1024;
-    let mut lattice = Lattice::new(size_x as usize, size_y as usize, size_z as usize);
-    let lattice_headers = LatticeHeaders::new(size_x, size_y, size_z);
+    let size_x = 3;//1024;
+    let size_y = 3;//128;
+    let size_z = 3;//1024;
+    let mut vertices : Vec<[f32; 3]> = Vec::new();
+    face_y_plus(&[size_x, size_y, size_z]).map(|p| vertices.push(p));
 
-    lattice.set(0, 0, 0, 0x00FFFFFF);
-/*    lattice.set(0, 0, 1, 0x00FFFF00);
-    lattice.set(0, 1, 0, 0x00FF00FF);
-    lattice.set(0, 1, 1, 0x00FF0000);
-    lattice.set(1, 0, 0, 0x0000FFFF);
-    lattice.set(1, 0, 1, 0x0000FF00);
-    lattice.set(1, 1, 0, 0x000000FF);
-    lattice.set(1, 1, 1, 0x00000000);
-    */
+    let mut lattice = Lattice::new(size_x, size_y, size_z);
+    let lattice_headers = LatticeHeaders::new(size_x as u32, size_y as u32, size_z as u32);
+
+    for x in 0..3 {
+    for y in 0..3 {
+    for z in 0..3 {
+        let r = if x % 2 == 0 {
+            0x000000FF
+        } else {
+            0x00000000
+        };
+        let g = if y % 2 == 0 {
+            0x0000FF00
+        } else {
+            0x00000000
+        };
+        let b = if z % 2 == 0 {
+            0x00FF0000
+        } else {
+            0x00000000
+        };
+        let c = 0xFF000000 + r + g + b;
+        lattice.set(x, y, z, c);
+    }
+    }
+    }
+
     let mut last_mouse_position : Option<(f32, f32)> = None;
     let mut current_mouse_position : Option<(f32, f32)> = None;
     mvp_uniform.projection = glam::Mat4::perspective_rh(45.0, window.inner_size().width as f32 / window.inner_size().height as f32, 1.0, 1000.0 );

@@ -76,7 +76,9 @@ fn vs_main(input: VertexInput, @builtin(vertex_index) in_vertex_index: u32, @bui
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+    let x = u32(in.vert_pos.x + f32(lattice_headers.size_x) / 2.0);
+    let y = u32(in.vert_pos.y + f32(lattice_headers.size_y) / 2.0);
+    let z = u32(in.vert_pos.z + f32(lattice_headers.size_z) / 2.0);
+    return unpack_rgba(lattice_get(x, y, z));
 //    return vec4<f32>(in.vert_pos, 1.0);
-//    return unpack_rgba(lattice_get(0u, 0u, 0u));
-    return vec4<f32>(in.vert_pos, 1.0);
 }
