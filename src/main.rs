@@ -216,9 +216,19 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     let size_y = 3;//128;
     let size_z = 3;//1024;
     let mut vertices : Vec<[f32; 3]> = Vec::new();
-    face_y_plus(&[size_x, size_y, size_z], &[0.0, 0.0, 0.0]).map(|p| vertices.push(p));
-    face_x_plus(&[size_x, size_y, size_z], &[0.0, 0.0, 0.0]).map(|p| vertices.push(p));
-    face_z_plus(&[size_x, size_y, size_z], &[0.0, 0.0, 0.0]).map(|p| vertices.push(p));
+
+    for y in 0..size_y {
+        let offset_y = -(size_y as f32 / 2.0) + y as f32;
+        face_y_plus(&[size_x, size_y, size_z], &[0.0, offset_y, 0.0]).map(|p| vertices.push(p));
+    }
+    for x in 0..size_x {
+        let offset_x = -(size_x as f32 / 2.0) + x as f32;
+        face_x_plus(&[size_x, size_y, size_z], &[offset_x, 0.0, 0.0]).map(|p| vertices.push(p));
+    }
+    for z in 0..size_z {
+        let offset_z = -(size_z as f32 / 2.0) + z as f32;
+        face_z_plus(&[size_x, size_y, size_z], &[0.0, 0.0, offset_z]).map(|p| vertices.push(p));
+    }
 
     let mut lattice = Lattice::new(size_x, size_y, size_z);
     let lattice_headers = LatticeHeaders::new(size_x as u32, size_y as u32, size_z as u32);
@@ -446,7 +456,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                             rpass.set_pipeline(&render_pipeline);
                             rpass.set_bind_group(0, &mvp_bind_group, &[]);
                             rpass.set_vertex_buffer(0, vertex_buffer.slice(..));
-                            rpass.draw(0..18, 0..1);
+                            rpass.draw(0..vertices.len() as u32, 0..1);
                         }
 
                         queue.submit(Some(encoder.finish()));
