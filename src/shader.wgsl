@@ -80,5 +80,5 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let y = u32(in.vert_pos.y + f32(lattice_headers.size_y) / 2.0);
     let z = u32(in.vert_pos.z + f32(lattice_headers.size_z) / 2.0);
     return unpack_rgba(lattice_get(x, y, z));
-//    return vec4<f32>(in.vert_pos, 1.0);
+//    return vec4<f32>((in.vert_pos + 1.5) / 10.0, 1.0);
 }
