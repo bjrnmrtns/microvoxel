@@ -83,7 +83,7 @@ fn face_x_min(size: &[usize; 3], offset: &[f32; 3]) -> [[f32; 3]; 6] {
         cube_vertex(6, &size, &offset),
         cube_vertex(0, &size, &offset),
         cube_vertex(2, &size, &offset),
-        cube_vertex(6, &size, &offset),
+        cube_vertex(4, &size, &offset),
     ]
 }
 
@@ -104,7 +104,7 @@ fn face_y_min(size: &[usize; 3], offset: &[f32; 3]) -> [[f32; 3]; 6] {
     let size = [size[0], 0, size[2]];
     let offset = [offset[0], offset[1], offset[2]];
     [
-        cube_vertex(4, &size, &offset),
+        cube_vertex(4, &size, &offset), 
         cube_vertex(5, &size, &offset),
         cube_vertex(0, &size, &offset),
         cube_vertex(5, &size, &offset),
@@ -135,7 +135,7 @@ fn face_z_min(size: &[usize; 3], offset: &[f32; 3]) -> [[f32; 3]; 6] {
         cube_vertex(7, &size, &offset),
         cube_vertex(4, &size, &offset),
         cube_vertex(6, &size, &offset),
-        cube_vertex(5, &size, &offset),
+        cube_vertex(7, &size, &offset),
     ]
 }
 
@@ -228,6 +228,19 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     for z in 0..size_z {
         let offset_z = -(size_z as f32 / 2.0) + z as f32;
         face_z_plus(&[size_x, size_y, size_z], &[0.0, 0.0, offset_z]).map(|p| vertices.push(p));
+    }
+    
+    for y in 0..size_y {
+        let offset_y = (size_y as f32 / 2.0) - y as f32;
+        face_y_min(&[size_x, size_y, size_z], &[0.0, offset_y, 0.0]).map(|p| vertices.push(p));
+    }
+    for x in 0..size_x {
+        let offset_x = (size_x as f32 / 2.0) - x as f32;
+        face_x_min(&[size_x, size_y, size_z], &[offset_x, 0.0, 0.0]).map(|p| vertices.push(p));
+    }
+    for z in 0..size_z {
+        let offset_z = (size_z as f32 / 2.0) - z as f32;
+        face_z_min(&[size_x, size_y, size_z], &[0.0, 0.0, offset_z]).map(|p| vertices.push(p));
     }
 
     let mut lattice = Lattice::new(size_x, size_y, size_z);
