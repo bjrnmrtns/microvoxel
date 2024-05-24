@@ -58,7 +58,7 @@ fn unpack_rgba(color: u32) -> vec4<f32> {
 }
 
 struct VertexInput {
-    @location(0) position: vec3<u32>,
+    @location(0) position: vec3<f32>,
 }
 
 struct VertexOutput {
@@ -69,8 +69,8 @@ struct VertexOutput {
 @vertex
 fn vs_main(input: VertexInput, @builtin(vertex_index) in_vertex_index: u32, @builtin(instance_index) in_instance_index: u32) -> VertexOutput {
     var out: VertexOutput;
-    out.clip_position = mvp.projection * mvp.view * mvp.world * vec4f(f32(input.position.x), f32(input.position.y), f32(input.position.z), 1.0);
-    out.vert_pos = vec3<f32>(f32(input.position.x), f32(input.position.y), f32(input.position.z));
+    out.clip_position = mvp.projection * mvp.view * mvp.world * vec4f(input.position, 1.0);
+    out.vert_pos = input.position;
     return out;
 }
 
