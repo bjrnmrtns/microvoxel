@@ -58,7 +58,7 @@ fn unpack_rgba(color: u32) -> vec4<f32> {
 }
 
 struct VertexInput {
-    @location(0) position: vec3<f32>,
+    @location(0) position: vec3<u32>,
 }
 
 struct VertexOutput {
@@ -69,16 +69,17 @@ struct VertexOutput {
 @vertex
 fn vs_main(input: VertexInput, @builtin(vertex_index) in_vertex_index: u32, @builtin(instance_index) in_instance_index: u32) -> VertexOutput {
     var out: VertexOutput;
-    out.clip_position = mvp.projection * mvp.view * mvp.world * vec4f(input.position, 1.0);
-    out.vert_pos = input.position;
+    out.clip_position = mvp.projection * mvp.view * mvp.world * vec4f(f32(input.position.x), f32(input.position.y), f32(input.position.z), 1.0);
+    out.vert_pos = vec3<f32>(f32(input.position.x), f32(input.position.y), f32(input.position.z));
     return out;
 }
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let x = u32(in.vert_pos.x + f32(lattice_headers.size_x) / 2.0);
-    let y = u32(in.vert_pos.y + f32(lattice_headers.size_y) / 2.0);
-    let z = u32(in.vert_pos.z + f32(lattice_headers.size_z) / 2.0);
+    let x = u32(in.vert_pos.x);
+    let y = u32(in.vert_pos.y);
+    let z = u32(in.vert_pos.z);
     return unpack_rgba(lattice_get(x, y, z));
 //    return vec4<f32>((in.vert_pos + 1.5) / 10.0, 1.0);
+//    return vec4<f32>(1.0, 0.0, 0.0, 1.0);
 }

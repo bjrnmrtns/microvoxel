@@ -60,96 +60,73 @@ struct LatticeHeaders
     pub size_z: u32,
 }
 
-fn cube_vertex(index: usize, size: &[usize; 3], offset: &[f32; 3]) -> [f32; 3] {
-    let cube_vertices = [ 
-        [-1,-1, 1],
-        [ 1,-1, 1],
-        [-1, 1, 1],
-        [ 1, 1, 1],
-        [-1,-1,-1],
-        [ 1,-1,-1],
-        [-1, 1,-1],
-        [ 1, 1,-1],
+fn cube_face(axis: usize, indices: &[usize; 6]) -> [[u32; 3]; 6] {
+    const PLANE_VERTICES_X : [[u32; 3]; 4] = [
+        [0, 0, 0],
+        [0, 0, 1],
+        [0, 1, 0],
+        [0, 1, 1],
     ];
-    [cube_vertices[index][0] as f32 * size[0] as f32 / 2.0 + offset[0], cube_vertices[index][1] as f32 * size[1] as f32 / 2.0 + offset[1], cube_vertices[index][2] as f32 * size[2] as f32 / 2.0 + offset[2]]
-}
-
-fn face_z_plus(size: &[usize; 3], offset: &[f32; 3]) -> [[f32; 3]; 6] {
-    let size = [size[0], size[1], 0];
-    let offset = [offset[0], offset[1], offset[2]];
+    const PLANE_VERTICES_Y : [[u32; 3]; 4]  = [
+        [0, 0, 0],
+        [1, 0, 0],
+        [0, 0, 1],
+        [1, 0, 1],
+    ];
+    const PLANE_VERTICES_Z : [[u32; 3]; 4]  = [
+        [1, 0, 0],
+        [0, 0, 0],
+        [1, 1, 0],
+        [0, 1, 0],
+    ];
+    const CUBE_VERTICES : [[[u32; 3]; 4]; 3]  = [
+        PLANE_VERTICES_X,
+        PLANE_VERTICES_Y,
+        PLANE_VERTICES_Z,
+    ];
     [
-        cube_vertex(0, &size, &offset),
-        cube_vertex(1, &size, &offset),
-        cube_vertex(2, &size, &offset),
-        cube_vertex(1, &size, &offset),
-        cube_vertex(3, &size, &offset),
-        cube_vertex(2, &size, &offset),
+        CUBE_VERTICES[axis][indices[0]],
+        CUBE_VERTICES[axis][indices[1]],
+        CUBE_VERTICES[axis][indices[2]],
+        CUBE_VERTICES[axis][indices[3]],
+        CUBE_VERTICES[axis][indices[4]],
+        CUBE_VERTICES[axis][indices[5]],
     ]
 }
 
-fn face_z_min(size: &[usize; 3], offset: &[f32; 3]) -> [[f32; 3]; 6] {
-    let size = [size[0], size[1], 0];
-    let offset = [offset[0], offset[1], offset[2]];
-    [
-        cube_vertex(5, &size, &offset),
-        cube_vertex(4, &size, &offset),
-        cube_vertex(7, &size, &offset),
-        cube_vertex(4, &size, &offset),
-        cube_vertex(6, &size, &offset),
-        cube_vertex(7, &size, &offset),
-    ]
+const PLUS_WINDING : [usize; 6] = [1, 2, 3, 0, 2, 1]; 
+const MIN_WINDING : [usize; 6] = [0, 1, 2, 1, 3, 2]; 
+
+fn cube_x_min() -> [[u32; 3]; 6] {
+    cube_face(0, &MIN_WINDING)
 }
 
-fn face_y_plus(size: &[usize; 3], offset: &[f32; 3]) -> [[f32; 3]; 6] {
-    let size = [size[0], 0, size[2]];
-    let offset = [offset[0], offset[1], offset[2]];
-    [
-        cube_vertex(2, &size, &offset),
-        cube_vertex(3, &size, &offset),
-        cube_vertex(6, &size, &offset),
-        cube_vertex(3, &size, &offset),
-        cube_vertex(7, &size, &offset),
-        cube_vertex(6, &size, &offset),
-    ]
+fn cube_x_plus() -> [[u32; 3]; 6] {
+    cube_face(0, &PLUS_WINDING)
 }
 
-fn face_y_min(size: &[usize; 3], offset: &[f32; 3]) -> [[f32; 3]; 6] {
-    let size = [size[0], 0, size[2]];
-    let offset = [offset[0], offset[1], offset[2]];
-    [
-        cube_vertex(4, &size, &offset), 
-        cube_vertex(5, &size, &offset),
-        cube_vertex(0, &size, &offset),
-        cube_vertex(5, &size, &offset),
-        cube_vertex(1, &size, &offset),
-        cube_vertex(0, &size, &offset),
-    ]
+fn cube_y_min() -> [[u32; 3]; 6] {
+    cube_face(1, &MIN_WINDING)
 }
 
-fn face_x_plus(size: &[usize; 3], offset: &[f32; 3]) -> [[f32; 3]; 6] {
-    let size = [0, size[1], size[2]];
-    let offset = [offset[0], offset[1], offset[2]];
-    [
-        cube_vertex(1, &size, &offset),
-        cube_vertex(5, &size, &offset),
-        cube_vertex(3, &size, &offset),
-        cube_vertex(5, &size, &offset),
-        cube_vertex(7, &size, &offset),
-        cube_vertex(3, &size, &offset),
-    ]
+fn cube_y_plus() -> [[u32; 3]; 6] {
+    cube_face(1, &PLUS_WINDING)
 }
-        
-fn face_x_min(size: &[usize; 3], offset: &[f32; 3]) -> [[f32; 3]; 6] {
-    let size = [0, size[1], size[2]];
-    let offset = [offset[0], offset[1], offset[2]];
-    [
-        cube_vertex(4, &size, &offset),
-        cube_vertex(0, &size, &offset),
-        cube_vertex(6, &size, &offset),
-        cube_vertex(0, &size, &offset),
-        cube_vertex(2, &size, &offset),
-        cube_vertex(6, &size, &offset),
-    ]
+
+fn cube_z_min() -> [[u32; 3]; 6] {
+    cube_face(2, &MIN_WINDING)
+}
+
+fn cube_z_plus() -> [[u32; 3]; 6] {
+    cube_face(2, &PLUS_WINDING)
+}
+
+fn cube_scale(input: [u32; 3], scale: [u32; 3]) -> [u32; 3] {
+    [input[0] * scale[0], input[1] * scale[1], input[2] * scale[2]]
+}
+
+fn cube_offset(input: [u32; 3], offset: [u32; 3]) -> [u32; 3] {
+    [input[0] + offset[0], input[1] + offset[1], input[2] + offset[2]]
 }
 
 impl LatticeHeaders {
@@ -165,16 +142,10 @@ impl LatticeHeaders {
 unsafe impl bytemuck::Pod for LatticeHeaders {}
 unsafe impl bytemuck::Zeroable for LatticeHeaders {}
 
-#[repr(C)]
-#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-struct Vertex {
-    position: [f32; 3],
-}
-
 fn create_depth_texture(device: &wgpu::Device, width: u32, height: u32) -> wgpu::TextureView {
     let size = wgpu::Extent3d {
-        width: width,
-        height: height,
+        width,
+        height,
         depth_or_array_layers: 1,
     };
 
@@ -192,7 +163,6 @@ fn create_depth_texture(device: &wgpu::Device, width: u32, height: u32) -> wgpu:
     let texture = device.create_texture(&desc);
     texture.create_view(&wgpu::TextureViewDescriptor::default())
 }
-
 
 async fn run(event_loop: EventLoop<()>, window: Window) {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
@@ -212,41 +182,22 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
 
     let mut mvp_uniform = Uniform::default();
 
-    let size_x = 129;//1024;
-    let size_y = 129;//128;
-    let size_z = 129;//1024;
-    let mut vertices_y_min : Vec<[f32; 3]> = Vec::new();
-    let mut vertices_x_min : Vec<[f32; 3]> = Vec::new();
-    let mut vertices_z_min : Vec<[f32; 3]> = Vec::new();
-    let mut vertices_y_plus : Vec<[f32; 3]> = Vec::new();
-    let mut vertices_x_plus : Vec<[f32; 3]> = Vec::new();
-    let mut vertices_z_plus : Vec<[f32; 3]> = Vec::new();
-
-    let dirty_epsilon = 0.001;
+    let size_x = 4;//1024;
+    let size_y = 4;//128;
+    let size_z = 4;//1024;
+    let mut vertices_y_min : Vec<[u32; 3]> = Vec::new();
+    let mut vertices_x_min : Vec<[u32; 3]> = Vec::new();
+    let mut vertices_z_min : Vec<[u32; 3]> = Vec::new();
+    let mut vertices_y_plus : Vec<[u32; 3]> = Vec::new();
+    let mut vertices_x_plus : Vec<[u32; 3]> = Vec::new();
+    let mut vertices_z_plus : Vec<[u32; 3]> = Vec::new();
 
     for y in 0..size_y {
-        let offset_y = -(size_y as f32 / 2.0) + y as f32;
-        face_y_min(&[size_x, size_y, size_z], &[0.0, offset_y + dirty_epsilon, 0.0]).map(|p| vertices_y_min.push(p));
-    }
-    for x in 0..size_x {
-        let offset_x = -(size_x as f32 / 2.0) + x as f32;
-        face_x_min(&[size_x, size_y, size_z], &[offset_x + dirty_epsilon, 0.0, 0.0]).map(|p| vertices_x_min.push(p));
-    }
-    for z in 0..size_z {
-        let offset_z = -(size_z as f32 / 2.0) + z as f32;
-        face_z_min(&[size_x, size_y, size_z], &[0.0, 0.0, offset_z + dirty_epsilon]).map(|p| vertices_z_min.push(p));
+        cube_y_plus().map(|p| vertices_y_plus.push(cube_offset(cube_scale(p, [size_x as u32, size_y as u32, size_z as u32]), [0, y as u32, 0])));
     }
     for y in 0..size_y {
-        let offset_y = (size_y as f32 / 2.0) - y as f32;
-        face_y_plus(&[size_x, size_y, size_z], &[0.0, offset_y - dirty_epsilon, 0.0]).map(|p| vertices_y_plus.push(p));
-    }
-    for x in 0..size_x {
-        let offset_x = (size_x as f32 / 2.0) - x as f32;
-        face_x_plus(&[size_x, size_y, size_z], &[offset_x- dirty_epsilon, 0.0, 0.0]).map(|p| vertices_x_plus.push(p));
-    }
-    for z in 0..size_z {
-        let offset_z = (size_z as f32 / 2.0) - z as f32;
-        face_z_plus(&[size_x, size_y, size_z], &[0.0, 0.0, offset_z- dirty_epsilon]).map(|p| vertices_z_plus.push(p));
+        let y = size_y - y;
+        cube_y_min().map(|p| vertices_y_min.push(cube_offset(cube_scale(p, [size_x as u32, size_y as u32, size_z as u32]), [0, y as u32, 0])));
     }
 
     let mut lattice = Lattice::new(size_x, size_y, size_z);
@@ -363,13 +314,13 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
             module: &shader,
             entry_point: "vs_main",
             buffers: &[wgpu::VertexBufferLayout {
-                array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
+                array_stride: std::mem::size_of::<[u32; 3]>() as wgpu::BufferAddress,
                 step_mode: wgpu::VertexStepMode::Vertex,
                 attributes: &[
                     wgpu::VertexAttribute {
                         offset: 0,
                         shader_location: 0,
-                        format: wgpu::VertexFormat::Float32x3,
+                        format: wgpu::VertexFormat::Uint32x3,
                     },
                 ],
             }],
@@ -501,16 +452,19 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                             rpass.set_bind_group(0, &mvp_bind_group, &[]);
                             rpass.set_vertex_buffer(0, vertex_buffer_y_min.slice(..));
                             rpass.draw(0..vertices_y_min.len() as u32, 0..1);
-                            rpass.set_vertex_buffer(0, vertex_buffer_x_min.slice(..));
-                            rpass.draw(0..vertices_x_min.len() as u32, 0..1);
-                            rpass.set_vertex_buffer(0, vertex_buffer_z_min.slice(..));
-                            rpass.draw(0..vertices_z_min.len() as u32, 0..1);
+
+//                            rpass.set_vertex_buffer(0, vertex_buffer_x_min.slice(..));
+//                            rpass.draw(0..vertices_x_min.len() as u32, 0..1);
+//                            rpass.set_vertex_buffer(0, vertex_buffer_z_min.slice(..));
+//                            rpass.draw(0..vertices_z_min.len() as u32, 0..1);
+
                             rpass.set_vertex_buffer(0, vertex_buffer_y_plus.slice(..));
                             rpass.draw(0..vertices_y_plus.len() as u32, 0..1);
-                            rpass.set_vertex_buffer(0, vertex_buffer_x_plus.slice(..));
-                            rpass.draw(0..vertices_x_plus.len() as u32, 0..1);
-                            rpass.set_vertex_buffer(0, vertex_buffer_z_plus.slice(..));
-                            rpass.draw(0..vertices_z_plus.len() as u32, 0..1);
+
+//                            rpass.set_vertex_buffer(0, vertex_buffer_x_plus.slice(..));
+//                            rpass.draw(0..vertices_x_plus.len() as u32, 0..1);
+//                            rpass.set_vertex_buffer(0, vertex_buffer_z_plus.slice(..));
+//                            rpass.draw(0..vertices_z_plus.len() as u32, 0..1);
                         }
 
                         queue.submit(Some(encoder.finish()));
