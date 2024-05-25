@@ -41,11 +41,14 @@ x add 10x10x2 chunks
 2024-05-24
 + start implementing what we have currently in cpp in rust/wgpu
 + fix lattice color lookup  
+
+2024-05-25
++ add fps counter
 - investigate a sparse 3d texture (maybe octree like)
 - we have 6 faces, we only need to render 3 sides add true culling in software
 - implement deferred renderer
 - use instance buffer or uniform buffer with offsets or push constants to have different header data for x y z and -x -y -z
   + add instanced rendering for two
-- add fps counter
 - randomly change lattice see what impact on performance
+- Fix fps count (now at 60) probably waiting for vsync (MainEventsCleared??)
 
