@@ -1,11 +1,45 @@
 mod camera;
 
-use std::borrow::Cow;
+use std::{borrow::Cow, time::Instant};
 
 use wgpu::util::DeviceExt;
 use winit::{
     event::{self, Event, WindowEvent}, event_loop::EventLoop, keyboard::PhysicalKey, window::{Window, WindowBuilder}
 };
+
+struct Fps {
+    size: usize,
+    steps: usize,
+    current: usize,
+    time_points: Vec<Instant>,
+}
+
+impl Fps {
+    pub fn new(size: usize) -> Self {
+        Self {
+            size,
+            steps: size - 1,
+            current: 0,
+            time_points: vec![Instant::now(); size],
+        }
+    }
+
+    pub fn add_timepoint(&mut self) {
+        self.time_points[self.current] = Instant::now();
+        self.current = (self.current + 1) % self.size;
+    }
+
+    pub fn value(&self) -> usize {
+        let mut microseconds = 0;
+        for i in 0..self.steps { // nine steps
+            let first = (self.current  + i) % self.size;
+            let second = (self.current + i + 1) % self.size;
+            let duration = self.time_points[second].duration_since(self.time_points[first]);
+            microseconds += duration.as_micros();
+        }
+        (1000000.0 / (microseconds as f32 / self.steps as f32)) as usize // nine steps
+    }
+}
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Default)]
@@ -186,9 +220,9 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
 
     let mut mvp_uniform = Uniform::default();
 
-    let size_x = 32;//1024;
+    let size_x = 128;//1024;
     let size_y = 32;//128;
-    let size_z = 32;//1024;
+    let size_z = 128;//1024;
     let mut vertices_y_min : Vec<[f32; 3]> = Vec::new();
     let mut vertices_x_min : Vec<[f32; 3]> = Vec::new();
     let mut vertices_z_min : Vec<[f32; 3]> = Vec::new();
@@ -275,7 +309,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
         } else {
             0x00000000
         };
-        let c = 0xFF000000 + r + g + b;
+        let c = 0xBB000000 + r + g + b;
         lattice.set(x, y, z, c);
     }
     }
@@ -444,6 +478,8 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
         usage: wgpu::BufferUsages::VERTEX,
     });
 
+    let mut fps = Fps::new(10);
+
     event_loop
         .run(move |event, target| {
             // Have the closure take ownership of the resources.
@@ -502,6 +538,8 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
                                     timestamp_writes: None,
                                     occlusion_query_set: None,
                                 });
+                            fps.add_timepoint();
+                            println!("fps: {}", fps.value());
                             rpass.set_pipeline(&render_pipeline);
                             rpass.set_bind_group(0, &mvp_bind_group, &[]);
                             rpass.set_vertex_buffer(0, vertex_buffer_y_min.slice(..));
