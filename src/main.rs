@@ -1,30 +1,48 @@
 use image::{RgbImage, ImageBuffer, Rgb};
 use cgmath::Vector3;
-use cgmath::Point3;
 use cgmath::InnerSpace;
 use cgmath::VectorSpace;
 
 struct Ray {
-    pub origin: Point3<f64>,
+    pub origin: Vector3<f64>,
     pub dir: Vector3<f64>,
 }
 
 impl Ray {
-    pub fn new(origin: Point3<f64>, dir: Vector3<f64>) -> Self {
+    pub fn new(origin: Vector3<f64>, dir: Vector3<f64>) -> Self {
         Self {
             origin,
             dir,
         }
     }
-    pub fn at(&self, t: f64) -> Point3<f64> {
+    pub fn at(&self, t: f64) -> Vector3<f64> {
         self.origin + self.dir * t
     }
 }
 
-fn ray_color(ray: &Ray) -> Vector3<f64> {
-    let normalized_y = 0.5 * (ray.dir.normalize().y + 1.0);
+fn hit_sphere(ray: &Ray, center: Vector3<f64>, radius: f64) -> Option<f64> {
+    let oc = center - ray.origin;
+    let a = ray.dir.dot(ray.dir);
+    let b = -2.0 * ray.dir.dot(oc);
+    let c = oc.dot(oc) - (radius * radius);
+    let discriminant = b * b - 4.0 * a * c;
+    if discriminant >= 0.0 {
+        Some((-b - discriminant.sqrt()) / 2.0 * a)
+    } else {
+        None
+    }
+}
 
-    Vector3::new(1.0, 1.0, 1.0).lerp(Vector3::new(0.5, 0.7, 1.0), normalized_y)
+fn ray_color(ray: &Ray) -> Vector3<f64> {
+    let t = hit_sphere(ray, Vector3::new(0.0, 0.0, -1.0), 0.5);
+
+    if let Some(t) = t {
+        let n = (ray.at(t) - Vector3::new(0.0, 0.0, -1.0)).normalize();
+        0.5 * (n + Vector3::new(1.0, 1.0, 1.0))
+    } else {
+        let normalized_y = 0.5 * (ray.dir.normalize().y + 1.0);
+        Vector3::new(1.0, 1.0, 1.0).lerp(Vector3::new(0.5, 0.7, 1.0), normalized_y)
+    }
 }
 
 fn main() {
@@ -36,7 +54,7 @@ fn main() {
     const FOCAL_LENGTH: f64 = 1.0;
     const VIEWPORT_HEIGHT: f64 = 2.0;
     const VIEWPORT_WIDTH: f64 = VIEWPORT_HEIGHT * IMAGE_WIDTH as f64 / IMAGE_HEIGHT as f64;
-    const CAMERA_CENTER: Point3<f64> = Point3::new(0.0, 0.0, 0.0);
+    const CAMERA_CENTER: Vector3<f64> = Vector3::new(0.0, 0.0, 0.0);
 
     let viewport_u: Vector3<f64> = Vector3::new(VIEWPORT_WIDTH, 0.0, 0.0);
     let viewport_v: Vector3<f64> = Vector3::new(0.0, -VIEWPORT_HEIGHT, 0.0);
