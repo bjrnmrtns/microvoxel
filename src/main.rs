@@ -1,10 +1,12 @@
 use image::{RgbImage, ImageBuffer, Rgb};
 use cgmath::Vector3;
 use cgmath::Point3;
+use cgmath::InnerSpace;
+use cgmath::VectorSpace;
 
 struct Ray {
-    origin: Point3<f64>,
-    dir: Vector3<f64>,
+    pub origin: Point3<f64>,
+    pub dir: Vector3<f64>,
 }
 
 impl Ray {
@@ -20,7 +22,9 @@ impl Ray {
 }
 
 fn ray_color(ray: &Ray) -> Vector3<f64> {
-    Vector3::new(0.0, 0.0, 0.0)
+    let normalized_y = 0.5 * (ray.dir.normalize().y + 1.0);
+
+    Vector3::new(1.0, 1.0, 1.0).lerp(Vector3::new(0.5, 0.7, 1.0), normalized_y)
 }
 
 fn main() {
