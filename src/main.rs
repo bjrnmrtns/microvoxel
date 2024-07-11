@@ -26,10 +26,10 @@ fn hit_sphere(ray: &Ray, center: Vector3<f64>, radius: f64) -> Option<f64> {
     let b = -2.0 * ray.dir.dot(oc);
     let c = oc.dot(oc) - (radius * radius);
     let discriminant = b * b - 4.0 * a * c;
-    if discriminant >= 0.0 {
-        Some((-b - discriminant.sqrt()) / 2.0 * a)
-    } else {
+    if discriminant < 0.0 {
         None
+    } else {
+        Some((-b - discriminant.sqrt()) / (2.0 * a))
     }
 }
 
@@ -49,7 +49,7 @@ fn main() {
     const ASPECT_RATIO: f64 = 16.0 / 9.0; 
     const IMAGE_WIDTH: u32 = 400;
     const CALCULATED_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
-    const IMAGE_HEIGHT: u32 = if CALCULATED_HEIGHT > 0 { CALCULATED_HEIGHT } else { 1 };
+    const IMAGE_HEIGHT: u32 = if CALCULATED_HEIGHT < 1 { 1 } else { CALCULATED_HEIGHT  };
 
     const FOCAL_LENGTH: f64 = 1.0;
     const VIEWPORT_HEIGHT: f64 = 2.0;
@@ -73,6 +73,7 @@ fn main() {
         let ray = Ray::new(CAMERA_CENTER, ray_direction);
             
         let color = ray_color(&ray); 
+        assert!(color.x < 1.001 && color.y < 1.001 && color.z < 1.001);
         let ir = (255.99 * color.x) as u8;
         let ig = (255.99 * color.y) as u8;
         let ib = (255.99 * color.z) as u8;
@@ -80,5 +81,4 @@ fn main() {
         *pixel = Rgb([ir, ig, ib]);
     }
     buffer.save("render.png").unwrap();
-
 }
