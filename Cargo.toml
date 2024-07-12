@@ -6,3 +6,5 @@ edition = "2021"
 [dependencies]
 cgmath = "0.18.0"
 image = "0.23.7"
+rand = "0.8.5"
+rand_pcg = "0.3.0"

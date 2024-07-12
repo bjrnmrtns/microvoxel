@@ -2,6 +2,59 @@ use image::{RgbImage, ImageBuffer, Rgb};
 use cgmath::Vector3;
 use cgmath::InnerSpace;
 use cgmath::VectorSpace;
+use rand::Rng;
+use rand_pcg::Pcg64Mcg;
+
+struct Random {
+    rng : Box<Pcg64Mcg>,
+}
+
+impl Random {
+    pub fn new() -> Self {
+        let rng = Box::new(Pcg64Mcg::new(42));
+        Self {
+            rng,
+        }
+    }
+    pub fn random_f64(&mut self) -> f64 {
+        self.rng.gen_range(0.0..1.0)
+    }
+    pub fn random_f64_min_max(&mut self, min: f64, max: f64) -> f64 {
+        min + (max - min) * self.random_f64()
+    }
+    pub fn sample_square(&mut self) -> Vector3<f64> {
+        Vector3::new(self.random_f64() - 0.5, self.random_f64() - 0.5, 0.0)
+    }
+
+}
+
+struct Interval {
+    pub min: f64,
+    pub max: f64
+}
+
+impl Interval {
+    pub const fn new(min: f64, max: f64) -> Self {
+        Self {
+            min,
+            max,
+        }
+    }
+    pub fn length(&self) -> f64 {
+        self.max - self.min
+    }
+    pub fn contains(&self, value: f64) -> bool {
+        self.min <= value && value <= self.max
+    }
+    pub fn surrounds(&self, value: f64) -> bool {
+        self.min < value && value < self.max
+    }
+    pub fn clamp(&self, value: f64) -> f64 {
+        value.clamp(self.min, self.max)
+    }
+    const EMPTY : Interval = Interval::new(f64::MAX, f64::MIN);
+    const UNIVERSE : Interval = Interval::new(f64::MIN, f64::MAX);
+}
 
 struct Ray {
     pub origin: Vector3<f64>,
@@ -20,25 +73,86 @@ impl Ray {
     }
 }
 
-fn hit_sphere(ray: &Ray, center: Vector3<f64>, radius: f64) -> Option<f64> {
-    let oc = center - ray.origin;
-    let a = ray.dir.dot(ray.dir);
-    let b = -2.0 * ray.dir.dot(oc);
-    let c = oc.dot(oc) - (radius * radius);
-    let discriminant = b * b - 4.0 * a * c;
-    if discriminant < 0.0 {
-        None
-    } else {
-        Some((-b - discriminant.sqrt()) / (2.0 * a))
+struct Hit {
+    pub p: Vector3<f64>,
+    pub n: Vector3<f64>,
+    pub t: f64,
+    front_face: bool,
+}
+
+impl Hit {
+    pub fn new(ray: &Ray, p: Vector3<f64>, n: Vector3<f64>, t: f64) -> Self {
+        let front_face = ray.dir.dot(n) < 0.0;
+        let n = if front_face {
+            n
+        } else {
+            -n
+        };
+        Self {
+            p,
+            n,
+            t,
+            front_face,
+        }
     }
 }
 
-fn ray_color(ray: &Ray) -> Vector3<f64> {
-    let t = hit_sphere(ray, Vector3::new(0.0, 0.0, -1.0), 0.5);
 
-    if let Some(t) = t {
-        let n = (ray.at(t) - Vector3::new(0.0, 0.0, -1.0)).normalize();
-        0.5 * (n + Vector3::new(1.0, 1.0, 1.0))
+trait Hittable {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<Hit>;
+}
+
+struct Sphere {
+    pub center: Vector3<f64>,
+    pub radius: f64,
+}
+
+impl Sphere {
+    pub fn new(center: Vector3<f64>, radius: f64) -> Self {
+        Self {
+            center,
+            radius,
+        }
+    }
+}
+
+impl Hittable for Sphere {
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<Hit> {
+        let oc = self.center - ray.origin;
+        let a = ray.dir.magnitude2();
+        let h = ray.dir.dot(oc);
+        let c = oc.magnitude2() - self.radius * self.radius;
+        let discriminant = h * h - a * c;
+        
+        if discriminant < 0.0 {
+            return None;
+        }
+        let sqrt_d = discriminant.sqrt();
+        let root = (h - sqrt_d) / a;
+        if !ray_t.surrounds(root) {
+            let root = (h + sqrt_d) / a;
+            if !ray_t.surrounds(root) {
+                return None;
+            }
+        }
+        let p = ray.at(root);
+        let outward_normal = (p - self.center) / self.radius;
+        Some(Hit::new(&ray, p, outward_normal, root))
+    }
+}
+
+fn ray_color(ray: &Ray, world: &Vec<Sphere>) -> Vector3<f64> {
+    let mut closest = f64::MAX;
+    let mut closest_hit = None;
+    for hittable in world {
+        if let Some(hit) = hittable.hit(&ray, Interval::new(0.0, closest)) {
+            closest = hit.t;
+            closest_hit = Some(hit);
+        }
+    }
+
+    if let Some(hit) = closest_hit {
+        0.5 * (hit.n + Vector3::new(1.0, 1.0, 1.0))
     } else {
         let normalized_y = 0.5 * (ray.dir.normalize().y + 1.0);
         Vector3::new(1.0, 1.0, 1.0).lerp(Vector3::new(0.5, 0.7, 1.0), normalized_y)
@@ -48,6 +162,8 @@ fn ray_color(ray: &Ray) -> Vector3<f64> {
 fn main() {
     const ASPECT_RATIO: f64 = 16.0 / 9.0; 
     const IMAGE_WIDTH: u32 = 400;
+    const SAMPLES_PER_PIXEL: u32 = 100;
+    const PIXEL_SAMPLE_SCALE: f64 = 1.0 / SAMPLES_PER_PIXEL as f64;
     const CALCULATED_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
     const IMAGE_HEIGHT: u32 = if CALCULATED_HEIGHT < 1 { 1 } else { CALCULATED_HEIGHT  };
 
@@ -67,16 +183,26 @@ fn main() {
     
     let mut buffer : RgbImage = ImageBuffer::new(IMAGE_WIDTH, IMAGE_HEIGHT);
 
+    let mut random = Random::new();
+    let mut world = Vec::new();
+    world.push(Sphere::new(Vector3::new(0.0, 0.0, -1.0), 0.5));
+    world.push(Sphere::new(Vector3::new(0.0, -100.5, -1.0), 100.0));
+    let world = world;
+
     for (x, y, pixel) in buffer.enumerate_pixels_mut() {
-        let pixel_center = pixel00_loc + (x as f64 * pixel_delta_u) + (y as f64 * pixel_delta_v);
-        let ray_direction = pixel_center - CAMERA_CENTER;
-        let ray = Ray::new(CAMERA_CENTER, ray_direction);
-            
-        let color = ray_color(&ray); 
-        assert!(color.x < 1.001 && color.y < 1.001 && color.z < 1.001);
-        let ir = (255.99 * color.x) as u8;
-        let ig = (255.99 * color.y) as u8;
-        let ib = (255.99 * color.z) as u8;
+        let mut color = Vector3::new(0.0, 0.0, 0.0);
+        for _ in 0..SAMPLES_PER_PIXEL {
+            let offset = random.sample_square();
+            let pixel_sample = pixel00_loc + ((x as f64 + offset.x) * pixel_delta_u) + ((y as f64 + offset.y) * pixel_delta_v);
+
+            let ray = Ray::new(CAMERA_CENTER, pixel_sample - CAMERA_CENTER);
+            color = color + ray_color(&ray, &world) * PIXEL_SAMPLE_SCALE;
+        }
+
+        const INTENSITY : Interval = Interval::new(0.000, 0.999);
+        let ir = (256.0 * INTENSITY.clamp(color.x)) as u8;
+        let ig = (256.0 * INTENSITY.clamp(color.y)) as u8;
+        let ib = (256.0 * INTENSITY.clamp(color.z)) as u8;
 
         *pixel = Rgb([ir, ig, ib]);
     }
