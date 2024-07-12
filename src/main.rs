@@ -25,7 +25,28 @@ impl Random {
     pub fn sample_square(&mut self) -> Vector3<f64> {
         Vector3::new(self.random_f64() - 0.5, self.random_f64() - 0.5, 0.0)
     }
-
+    pub fn random_vector3_min_max(&mut self, min: f64, max: f64) -> Vector3<f64> {
+        Vector3::new(self.random_f64_min_max(min, max), self.random_f64_min_max(min, max), self.random_f64_min_max(min, max))
+    }
+    pub fn random_in_unit_sphere(&mut self) -> Vector3<f64> {
+        loop {
+            let p = self.random_vector3_min_max(-1.0, 1.0);
+            if p.magnitude() < 1.0 {
+                return p;
+            }
+        }
+    }
+    pub fn random_unit_vector(&mut self) -> Vector3<f64> {
+        self.random_in_unit_sphere().normalize()
+    }
+    pub fn random_on_hemisphere(&mut self, normal: Vector3<f64>) -> Vector3<f64> {
+        let on_unit_sphere = self.random_unit_vector();
+        if on_unit_sphere.dot(normal) > 0.0 {
+            on_unit_sphere
+        } else {
+            -on_unit_sphere
+        }
+    }
 }
 
 struct Interval {
@@ -141,18 +162,24 @@ impl Hittable for Sphere {
     }
 }
 
-fn ray_color(ray: &Ray, world: &Vec<Sphere>) -> Vector3<f64> {
+fn ray_color(ray: &Ray, world: &Vec<Sphere>, depth: u32, random: &mut Random) -> Vector3<f64> {
+    if depth <= 0 {
+        return Vector3::new(0.0, 0.0, 0.0);
+    }
     let mut closest = f64::MAX;
     let mut closest_hit = None;
     for hittable in world {
-        if let Some(hit) = hittable.hit(&ray, Interval::new(0.0, closest)) {
+        // Add 0.001 to start interval to not include hits which are close because of rounding
+        // errors
+        if let Some(hit) = hittable.hit(&ray, Interval::new(0.001, closest)) {
             closest = hit.t;
             closest_hit = Some(hit);
         }
     }
-
     if let Some(hit) = closest_hit {
-        0.5 * (hit.n + Vector3::new(1.0, 1.0, 1.0))
+        let direction = random.random_on_hemisphere(hit.n);
+        let ray = Ray::new(hit.p, direction);
+        0.5 * ray_color(&ray, &world, depth - 1, random)
     } else {
         let normalized_y = 0.5 * (ray.dir.normalize().y + 1.0);
         Vector3::new(1.0, 1.0, 1.0).lerp(Vector3::new(0.5, 0.7, 1.0), normalized_y)
@@ -162,7 +189,8 @@ fn ray_color(ray: &Ray, world: &Vec<Sphere>) -> Vector3<f64> {
 fn main() {
     const ASPECT_RATIO: f64 = 16.0 / 9.0; 
     const IMAGE_WIDTH: u32 = 400;
-    const SAMPLES_PER_PIXEL: u32 = 100;
+    const SAMPLES_PER_PIXEL: u32 = 50;
+    const MAX_DEPTH : u32 = 50;
     const PIXEL_SAMPLE_SCALE: f64 = 1.0 / SAMPLES_PER_PIXEL as f64;
     const CALCULATED_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
     const IMAGE_HEIGHT: u32 = if CALCULATED_HEIGHT < 1 { 1 } else { CALCULATED_HEIGHT  };
@@ -196,8 +224,9 @@ fn main() {
             let pixel_sample = pixel00_loc + ((x as f64 + offset.x) * pixel_delta_u) + ((y as f64 + offset.y) * pixel_delta_v);
 
             let ray = Ray::new(CAMERA_CENTER, pixel_sample - CAMERA_CENTER);
-            color = color + ray_color(&ray, &world) * PIXEL_SAMPLE_SCALE;
+            color = color + ray_color(&ray, &world, MAX_DEPTH, &mut random);
         }
+        color = PIXEL_SAMPLE_SCALE * color;
 
         const INTENSITY : Interval = Interval::new(0.000, 0.999);
         let ir = (256.0 * INTENSITY.clamp(color.x)) as u8;
