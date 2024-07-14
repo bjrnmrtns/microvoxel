@@ -46,3 +46,4 @@ x add 10x10x2 chunks
 - investigate morton codes for sparse voxel octree (cache locality)
 - investigate sdt for traversal
 - investagate DDA traversal with octree
+- split in 4x4x4 blocks so we can store a mask in a 64bit value which is one read for traversing one block
