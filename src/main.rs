@@ -4,49 +4,33 @@ use cgmath::InnerSpace;
 use rand::Rng;
 use rand_pcg::Pcg64Mcg;
 
-struct Random {
-    rng : Box<Pcg64Mcg>,
-}
-
-impl Random {
-    pub fn new() -> Self {
-        let rng = Box::new(Pcg64Mcg::new(42));
-        Self {
-            rng,
-        }
-    }
-    pub fn random_f64(&mut self) -> f64 {
-        self.rng.gen_range(0.0..1.0)
-    }
-    pub fn random_f64_min_max(&mut self, min: f64, max: f64) -> f64 {
-        min + (max - min) * self.random_f64()
-    }
-    pub fn sample_square(&mut self) -> Vector3<f64> {
-        Vector3::new(self.random_f64() - 0.5, self.random_f64() - 0.5, 0.0)
-    }
-    pub fn random_vector3_min_max(&mut self, min: f64, max: f64) -> Vector3<f64> {
-        Vector3::new(self.random_f64_min_max(min, max), self.random_f64_min_max(min, max), self.random_f64_min_max(min, max))
-    }
-    pub fn random_in_unit_sphere(&mut self) -> Vector3<f64> {
-        loop {
-            let p = self.random_vector3_min_max(-1.0, 1.0);
-            if p.magnitude() < 1.0 {
-                return p;
-            }
-        }
-    }
-    pub fn random_unit_vector(&mut self) -> Vector3<f64> {
-        self.random_in_unit_sphere().normalize()
-    }
-    pub fn random_on_hemisphere(&mut self, normal: Vector3<f64>) -> Vector3<f64> {
-        let on_unit_sphere = self.random_unit_vector();
-        if on_unit_sphere.dot(normal) > 0.0 {
-            on_unit_sphere
-        } else {
-            -on_unit_sphere
-        }
-    }
-}
+const WORLD: [[u8; 24]; 24] = 
+[
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,2,2,2,2,2,0,0,0,0,3,0,3,0,3,0,0,0,1],
+  [1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,3,0,0,0,3,0,0,0,1],
+  [1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,2,2,0,2,2,0,0,0,0,3,0,3,0,3,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,4,0,0,0,0,5,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,4,0,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+];
 
 struct Interval {
     pub min: f64,
@@ -93,16 +77,9 @@ impl Ray {
     }
 }
 
-fn ray_color(ray: &Ray) -> Vector3<f64> {
-    Vector3::new(1.0, 0.0, 0.0)
-}
-
 fn main() {
     const ASPECT_RATIO: f64 = 16.0 / 9.0; 
     const IMAGE_WIDTH: u32 = 400;
-    const SAMPLES_PER_PIXEL: u32 = 50;
-    const MAX_DEPTH : u32 = 50;
-    const PIXEL_SAMPLE_SCALE: f64 = 1.0 / SAMPLES_PER_PIXEL as f64;
     const CALCULATED_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
     const IMAGE_HEIGHT: u32 = if CALCULATED_HEIGHT < 1 { 1 } else { CALCULATED_HEIGHT  };
 
@@ -122,18 +99,76 @@ fn main() {
     
     let mut buffer : RgbImage = ImageBuffer::new(IMAGE_WIDTH, IMAGE_HEIGHT);
 
-    let mut random = Random::new();
-
     for (x, y, pixel) in buffer.enumerate_pixels_mut() {
-        let mut color = Vector3::new(0.0, 0.0, 0.0);
-        for _ in 0..SAMPLES_PER_PIXEL {
-            let offset = random.sample_square();
-            let pixel_sample = pixel00_loc + ((x as f64 + offset.x) * pixel_delta_u) + ((y as f64 + offset.y) * pixel_delta_v);
+        let pixel_sample = pixel00_loc + (x as f64 * pixel_delta_u) + (y as f64 * pixel_delta_v);
 
-            let ray = Ray::new(CAMERA_CENTER, pixel_sample - CAMERA_CENTER);
-            color = color + ray_color(&ray);
+        let ray = Ray::new(CAMERA_CENTER, pixel_sample - CAMERA_CENTER);
+        let mut map_x = ray.origin.x as i32;
+        let mut map_y = ray.origin.y as i32;
+        let mut map_z = ray.origin.z as i32;
+
+        let delta_dist_x = if ray.dir.x == 0.0 { std::f64::MAX } else { (1.0 / ray.dir.x).abs() };
+        let delta_dist_y = if ray.dir.y == 0.0 { std::f64::MAX } else { (1.0 / ray.dir.y).abs() };
+        let delta_dist_z = if ray.dir.z == 0.0 { std::f64::MAX } else { (1.0 / ray.dir.z).abs() };
+
+        let (step_x, mut side_dist_x) = if ray.dir.x < 0.0 
+            { (-1, (ray.origin.x - map_x as f64) * delta_dist_x ) } 
+        else
+            {(1, (map_x as f64 + 1.0 - ray.origin.x) * delta_dist_x )};
+
+        let (step_y, mut side_dist_y) = if ray.dir.y < 0.0 
+            { (-1, (ray.origin.y - map_y as f64) * delta_dist_y ) } 
+        else
+            {(1, (map_y as f64 + 1.0 - ray.origin.y) * delta_dist_y )};
+
+        let (step_z, mut side_dist_z) = if ray.dir.z < 0.0 
+            { (-1, (ray.origin.z - map_z as f64) * delta_dist_z ) } 
+        else
+            {(1, (map_z as f64 + 1.0 - ray.origin.z) * delta_dist_z )};
+
+        let mut hit = false;
+        let mut hit_nothing = false;
+        let mut side : i32 = 0;
+        while !hit && !hit_nothing {
+            if side_dist_x < side_dist_y {
+                if side_dist_x < side_dist_z {
+                    side_dist_x += delta_dist_x;
+                    map_x += step_x;
+                    side = 0;
+                } else {
+                    side_dist_z += delta_dist_z;
+                    map_z += step_z;
+                    side = 2;
+                }
+            } else {
+                if side_dist_y < side_dist_z {
+                    side_dist_y += delta_dist_y;
+                    map_y += step_y;
+                    side = 1;
+                } else {
+                    side_dist_z += delta_dist_z;
+                    map_z += step_z;
+                    side = 2;
+                }
+            }
+/*                if map_x < 24 && map_y < 24 && map_x >= 0 && map_y >= 0 {
+                if map_z < WORLD[map_x as usize][map_y as usize] as i32 && map_z >= 0 {
+                    hit = true;
+                }
+            }
+            */
+            if map_x == 0 && map_y == 0 && map_z == -4 {
+                hit = true;
+            }
+            if map_x < -100 || map_x > 100 || map_y < -100 || map_y > 100 || map_z < -100 || map_z > 100   {
+                hit_nothing = true;
+            }
         }
-        color = PIXEL_SAMPLE_SCALE * color;
+        let color: Vector3<f64> = if hit {
+            Vector3::new(1.0, 0.0, 0.0)
+        } else {
+            Vector3::new(0.0, 1.0, 0.0)
+        };
 
         const INTENSITY : Interval = Interval::new(0.000, 0.999);
         let ir = (256.0 * INTENSITY.clamp(color.x)) as u8;
