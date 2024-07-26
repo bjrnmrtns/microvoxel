@@ -4,7 +4,7 @@ use cgmath::InnerSpace;
 use rand::Rng;
 use rand_pcg::Pcg64Mcg;
 
-const WORLD: [[u8; 24]; 24] = 
+/*const WORLD: [[u8; 24]; 24] = 
 [
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
   [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
@@ -30,6 +30,26 @@ const WORLD: [[u8; 24]; 24] =
   [1,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
   [1,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+];*/
+
+const WORLD: [[[u8; 4]; 4]; 4] = 
+[
+    [[1,0,0,0],
+     [0,0,0,0],
+     [0,0,0,0],
+     [0,0,0,0]],
+    [[0,0,0,0],
+     [0,1,0,0],
+     [0,0,0,0],
+     [0,0,0,0]],
+    [[0,0,0,0],
+     [0,0,0,0],
+     [0,0,1,0],
+     [0,0,0,0]],
+    [[0,0,0,0],
+     [0,0,0,0],
+     [0,0,0,0],
+     [0,0,0,1]],
 ];
 
 struct Interval {
@@ -86,7 +106,7 @@ fn main() {
     const FOCAL_LENGTH: f64 = 1.0;
     const VIEWPORT_HEIGHT: f64 = 2.0;
     const VIEWPORT_WIDTH: f64 = VIEWPORT_HEIGHT * IMAGE_WIDTH as f64 / IMAGE_HEIGHT as f64;
-    const CAMERA_CENTER: Vector3<f64> = Vector3::new(0.0, 0.0, 0.0);
+    const CAMERA_CENTER: Vector3<f64> = Vector3::new(0.0, 0.0, 4.0);
 
     let viewport_u: Vector3<f64> = Vector3::new(VIEWPORT_WIDTH, 0.0, 0.0);
     let viewport_v: Vector3<f64> = Vector3::new(0.0, -VIEWPORT_HEIGHT, 0.0);
@@ -98,7 +118,7 @@ fn main() {
     let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
     
     let mut buffer : RgbImage = ImageBuffer::new(IMAGE_WIDTH, IMAGE_HEIGHT);
-
+    
     for (x, y, pixel) in buffer.enumerate_pixels_mut() {
         let pixel_sample = pixel00_loc + (x as f64 * pixel_delta_u) + (y as f64 * pixel_delta_v);
 
@@ -151,15 +171,20 @@ fn main() {
                     side = 2;
                 }
             }
-/*                if map_x < 24 && map_y < 24 && map_x >= 0 && map_y >= 0 {
-                if map_z < WORLD[map_x as usize][map_y as usize] as i32 && map_z >= 0 {
+/*            if map_x > -24 && map_y > -24 && map_x <= 0 && map_y <= 0 {
+                if map_z < WORLD[-map_x as usize][-map_y as usize] as i32 && map_z >= 0 {
                     hit = true;
                 }
             }
             */
-            if map_x == 0 && map_y == 0 && map_z == -4 {
-                hit = true;
+            if map_x > -4 && map_y > -4 && map_z > -4 && map_x <= 0 && map_y <= 0 && map_z <= 0 {
+                if WORLD[-map_x as usize][-map_y as usize][-map_z as usize] as i32 == 1 {
+                    hit = true;
+                }
             }
+/*            if map_x == 0 && map_y == 0 && map_z == -4 {
+                hit = true;
+            }*/
             if map_x < -100 || map_x > 100 || map_y < -100 || map_y > 100 || map_z < -100 || map_z > 100   {
                 hit_nothing = true;
             }
